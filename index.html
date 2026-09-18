@@ -4,30 +4,69 @@
 <meta charset="UTF-8" />
 <title>Skupko — Matematika za 5. razred</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="Skupko — vježbanje skupova za 5. razred, s praćenjem napretka učenika." />
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<meta name="description" content="Skupko — vjezbanje skupova za 5. razred, s pracenjem napretka ucenika." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   html, body { margin: 0; padding: 0; background: #FBF3E3; }
+  #fallback {
+    font-family: system-ui, sans-serif; max-width: 560px; margin: 80px auto;
+    padding: 24px; background: #fff; border-radius: 16px; color: #1E2749;
+    box-shadow: 0 6px 24px rgba(30,39,73,0.08);
+  }
 </style>
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useMemo, useRef } = React;
+
+<div id="fallback">
+  <h2>Ucitavanje aplikacije...</h2>
+  <p id="fallback-msg">Ako se ova poruka zadrzi duze od nekoliko sekundi, provjeri internetsku vezu i osvjezi stranicu (F5).</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+
+<script>
+(function () {
+  var msg = document.getElementById('fallback-msg');
+  if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+    document.getElementById('fallback').querySelector('h2').textContent = 'Nije uspjelo ucitavanje biblioteka';
+    msg.textContent = 'Preglednik nije uspio dohvatiti React s interneta. Provjeri vezu, iskljuci eventualni blokator sadrzaja i osvjezi stranicu.';
+    return;
+  }
+  window.__SKUPKO_LIBS_OK__ = true;
+})();
+</script>
+
+<script>
+if (window.__SKUPKO_LIBS_OK__) {
+try {
+const {
+  useState,
+  useEffect,
+  useMemo,
+  useRef
+} = React;
 // XLSX comes from the CDN <script> tag as a global.
 
 // Tiny emoji-based stand-ins for the lucide-react icons used throughout —
 // keeps this a single dependency-free file with no build step.
 function makeIcon(emoji) {
-  return function Icon({ size = 16, style }) {
-    return (
-      <span style={{ fontSize: size, lineHeight: 1, display: "inline-block", ...style }}>
-        {emoji}
-      </span>
-    );
+  return function Icon({
+    size = 16,
+    style
+  }) {
+    return /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: size,
+        lineHeight: 1,
+        display: "inline-block",
+        ...style
+      }
+    }, emoji);
   };
 }
 const Users = makeIcon("👥");
@@ -65,40 +104,22 @@ const TEAL = "#2FBFA0";
 const YELLOW = "#F5B942";
 const LILAC = "#7C6CF0";
 const INK = "#232946";
-
 const FONT_HEAD = "'Baloo 2', system-ui, sans-serif";
 const FONT_BODY = "'Nunito', system-ui, sans-serif";
-
 const USERS_KEY = "skupko_users_v1";
 const ATTEMPTS_KEY = "skupko_attempts_v1";
 
 /* ---------------- helpers ---------------- */
 
 function translit(str) {
-  return (str || "")
-    .toString()
-    .toLowerCase()
-    .replace(/[čć]/g, "c")
-    .replace(/š/g, "s")
-    .replace(/ž/g, "z")
-    .replace(/đ/g, "dj")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
+  return (str || "").toString().toLowerCase().replace(/[čć]/g, "c").replace(/š/g, "s").replace(/ž/g, "z").replace(/đ/g, "dj").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 }
-
-const PASS_WORDS = [
-  "Zmaj", "Duga", "Zvijezda", "Oblak", "Sunce", "Val", "Cvijet", "Planet",
-  "Krug", "Munja", "Kruna", "Snijeg", "Kisa", "Vjetar", "Trava", "Suma",
-  "Rijeka", "Komet", "Galaksija", "Raketa",
-];
-
+const PASS_WORDS = ["Zmaj", "Duga", "Zvijezda", "Oblak", "Sunce", "Val", "Cvijet", "Planet", "Krug", "Munja", "Kruna", "Snijeg", "Kisa", "Vjetar", "Trava", "Suma", "Rijeka", "Komet", "Galaksija", "Raketa"];
 function generatePassword() {
   const w = PASS_WORDS[Math.floor(Math.random() * PASS_WORDS.length)];
   const n = Math.floor(10 + Math.random() * 89);
   return `${w}${n}`;
 }
-
 function generateUsername(ime, prezime, existing) {
   const base = `${translit(ime)}.${translit(prezime)}`;
   let candidate = base || "ucenik";
@@ -109,11 +130,9 @@ function generateUsername(ime, prezime, existing) {
   }
   return candidate;
 }
-
 function uid() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
-
 function fmtDate(ts) {
   const d = new Date(ts);
   return d.toLocaleString("hr-HR", {
@@ -121,10 +140,9 @@ function fmtDate(ts) {
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
-    minute: "2-digit",
+    minute: "2-digit"
   });
 }
-
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -133,107 +151,189 @@ function shuffle(arr) {
   }
   return a;
 }
-
 function sample(arr, n) {
   return shuffle(arr).slice(0, n);
 }
-
 function sameSet(a, b) {
   if (a.length !== b.length) return false;
   const sa = new Set(a);
-  return b.every((x) => sa.has(x));
+  return b.every(x => sa.has(x));
 }
 
 /* ---------------- games meta ---------------- */
 
-const GAMES = [
-  {
-    id: "pripadnost-brojevi",
-    name: "Pripadnost i broj elemenata",
-    short: "∈ / ∉ i broj elemenata",
-    desc: "Odluči pripada li element skupu i prebroji koliko elemenata skup ima.",
-    icon: Target,
-    color: CORAL,
-  },
-  {
-    id: "unija-presjek",
-    name: "Unija i presjek",
-    short: "A ∪ B, A ∩ B",
-    desc: "Pronađi zajedničke i sve elemente dva skupa — brojevi, riječi i Vennovi dijagrami.",
-    icon: Circle,
-    color: YELLOW,
-  },
-  {
-    id: "podskup",
-    name: "Podskup",
-    short: "A ⊆ B",
-    desc: "Provjeri je li jedan skup podskup drugoga.",
-    icon: Layers,
-    color: LILAC,
-  },
-];
-
-const UNIVERSES = [
-  {
-    name: "voće",
-    items: [
-      { id: "jabuka", label: "jabuka", emoji: "🍎" },
-      { id: "banana", label: "banana", emoji: "🍌" },
-      { id: "grozdje", label: "grožđe", emoji: "🍇" },
-      { id: "lubenica", label: "lubenica", emoji: "🍉" },
-      { id: "naranca", label: "naranča", emoji: "🍊" },
-      { id: "jagoda", label: "jagoda", emoji: "🍓" },
-      { id: "breskva", label: "breskva", emoji: "🍑" },
-      { id: "limun", label: "limun", emoji: "🍋" },
-      { id: "tresnja", label: "trešnja", emoji: "🍒" },
-      { id: "kivi", label: "kivi", emoji: "🥝" },
-    ],
-  },
-  {
-    name: "životinje",
-    items: [
-      { id: "pas", label: "pas", emoji: "🐶" },
-      { id: "macka", label: "mačka", emoji: "🐱" },
-      { id: "zec", label: "zec", emoji: "🐰" },
-      { id: "medvjed", label: "medvjed", emoji: "🐻" },
-      { id: "lav", label: "lav", emoji: "🦁" },
-      { id: "slon", label: "slon", emoji: "🐘" },
-      { id: "majmun", label: "majmun", emoji: "🐵" },
-      { id: "zaba", label: "žaba", emoji: "🐸" },
-      { id: "svinja", label: "svinja", emoji: "🐷" },
-      { id: "konj", label: "konj", emoji: "🐴" },
-    ],
-  },
-  {
-    name: "sport",
-    items: [
-      { id: "nogomet", label: "nogomet", emoji: "⚽" },
-      { id: "kosarka", label: "košarka", emoji: "🏀" },
-      { id: "tenis", label: "tenis", emoji: "🎾" },
-      { id: "plivanje", label: "plivanje", emoji: "🏊" },
-      { id: "skijanje", label: "skijanje", emoji: "⛷️" },
-      { id: "atletika", label: "atletika", emoji: "🏃" },
-      { id: "odbojka", label: "odbojka", emoji: "🏐" },
-      { id: "biciklizam", label: "biciklizam", emoji: "🚴" },
-      { id: "boks", label: "boks", emoji: "🥊" },
-      { id: "golf", label: "golf", emoji: "⛳" },
-    ],
-  },
-];
-
+const GAMES = [{
+  id: "pripadnost-brojevi",
+  name: "Pripadnost i broj elemenata",
+  short: "∈ / ∉ i broj elemenata",
+  desc: "Odluči pripada li element skupu i prebroji koliko elemenata skup ima.",
+  icon: Target,
+  color: CORAL
+}, {
+  id: "unija-presjek",
+  name: "Unija i presjek",
+  short: "A ∪ B, A ∩ B",
+  desc: "Pronađi zajedničke i sve elemente dva skupa — brojevi, riječi i Vennovi dijagrami.",
+  icon: Circle,
+  color: YELLOW
+}, {
+  id: "podskup",
+  name: "Podskup",
+  short: "A ⊆ B",
+  desc: "Provjeri je li jedan skup podskup drugoga.",
+  icon: Layers,
+  color: LILAC
+}];
+const UNIVERSES = [{
+  name: "voće",
+  items: [{
+    id: "jabuka",
+    label: "jabuka",
+    emoji: "🍎"
+  }, {
+    id: "banana",
+    label: "banana",
+    emoji: "🍌"
+  }, {
+    id: "grozdje",
+    label: "grožđe",
+    emoji: "🍇"
+  }, {
+    id: "lubenica",
+    label: "lubenica",
+    emoji: "🍉"
+  }, {
+    id: "naranca",
+    label: "naranča",
+    emoji: "🍊"
+  }, {
+    id: "jagoda",
+    label: "jagoda",
+    emoji: "🍓"
+  }, {
+    id: "breskva",
+    label: "breskva",
+    emoji: "🍑"
+  }, {
+    id: "limun",
+    label: "limun",
+    emoji: "🍋"
+  }, {
+    id: "tresnja",
+    label: "trešnja",
+    emoji: "🍒"
+  }, {
+    id: "kivi",
+    label: "kivi",
+    emoji: "🥝"
+  }]
+}, {
+  name: "životinje",
+  items: [{
+    id: "pas",
+    label: "pas",
+    emoji: "🐶"
+  }, {
+    id: "macka",
+    label: "mačka",
+    emoji: "🐱"
+  }, {
+    id: "zec",
+    label: "zec",
+    emoji: "🐰"
+  }, {
+    id: "medvjed",
+    label: "medvjed",
+    emoji: "🐻"
+  }, {
+    id: "lav",
+    label: "lav",
+    emoji: "🦁"
+  }, {
+    id: "slon",
+    label: "slon",
+    emoji: "🐘"
+  }, {
+    id: "majmun",
+    label: "majmun",
+    emoji: "🐵"
+  }, {
+    id: "zaba",
+    label: "žaba",
+    emoji: "🐸"
+  }, {
+    id: "svinja",
+    label: "svinja",
+    emoji: "🐷"
+  }, {
+    id: "konj",
+    label: "konj",
+    emoji: "🐴"
+  }]
+}, {
+  name: "sport",
+  items: [{
+    id: "nogomet",
+    label: "nogomet",
+    emoji: "⚽"
+  }, {
+    id: "kosarka",
+    label: "košarka",
+    emoji: "🏀"
+  }, {
+    id: "tenis",
+    label: "tenis",
+    emoji: "🎾"
+  }, {
+    id: "plivanje",
+    label: "plivanje",
+    emoji: "🏊"
+  }, {
+    id: "skijanje",
+    label: "skijanje",
+    emoji: "⛷️"
+  }, {
+    id: "atletika",
+    label: "atletika",
+    emoji: "🏃"
+  }, {
+    id: "odbojka",
+    label: "odbojka",
+    emoji: "🏐"
+  }, {
+    id: "biciklizam",
+    label: "biciklizam",
+    emoji: "🚴"
+  }, {
+    id: "boks",
+    label: "boks",
+    emoji: "🥊"
+  }, {
+    id: "golf",
+    label: "golf",
+    emoji: "⛳"
+  }]
+}];
 function numericItems(poolSize = 20) {
-  return Array.from({ length: poolSize }, (_, k) => ({
+  return Array.from({
+    length: poolSize
+  }, (_, k) => ({
     id: String(k + 1),
     label: String(k + 1),
-    emoji: null,
+    emoji: null
   }));
 }
-
 function pickItemPool() {
   // roughly half number-based, half word-based (with emoji)
-  if (Math.random() < 0.5) return { pool: numericItems(20), kind: "numbers" };
+  if (Math.random() < 0.5) return {
+    pool: numericItems(20),
+    kind: "numbers"
+  };
   const uni = UNIVERSES[Math.floor(Math.random() * UNIVERSES.length)];
-  return { pool: uni.items, kind: "words" };
+  return {
+    pool: uni.items,
+    kind: "words"
+  };
 }
 
 /* ---------------- question generators ---------------- */
@@ -242,7 +342,9 @@ function genPripadnost(n = 8) {
   const qs = [];
   for (let i = 0; i < n; i++) {
     const size = 4 + Math.floor(Math.random() * 3);
-    const pool = shuffle(Array.from({ length: 30 }, (_, k) => k + 1));
+    const pool = shuffle(Array.from({
+      length: 30
+    }, (_, k) => k + 1));
     const setArr = sample(pool, size).sort((a, b) => a - b);
     const letter = ["A", "B", "C"][i % 3];
     const isMember = Math.random() < 0.5;
@@ -260,12 +362,11 @@ function genPripadnost(n = 8) {
       letter,
       setArr,
       element,
-      correct: isMember,
+      correct: isMember
     });
   }
   return qs;
 }
-
 function genKardinalnost(n = 8) {
   const qs = [];
   for (let i = 0; i < n; i++) {
@@ -286,15 +387,15 @@ function genKardinalnost(n = 8) {
         qid: uid(),
         type: "count",
         letter,
-        display: display.map((it) => `${it.emoji} ${it.label}`),
+        display: display.map(it => `${it.emoji} ${it.label}`),
         correct: uniqueCount,
-        note: withDup
-          ? "Podsjetnik: element se u skupu broji samo jednom, čak i ako je zapisan dvaput."
-          : null,
+        note: withDup ? "Podsjetnik: element se u skupu broji samo jednom, čak i ako je zapisan dvaput." : null
       });
     } else {
       const size = 3 + Math.floor(Math.random() * 8);
-      const pool = shuffle(Array.from({ length: 40 }, (_, k) => k + 1));
+      const pool = shuffle(Array.from({
+        length: 40
+      }, (_, k) => k + 1));
       const setArr = sample(pool, size).sort((a, b) => a - b);
       qs.push({
         qid: uid(),
@@ -302,62 +403,78 @@ function genKardinalnost(n = 8) {
         letter,
         display: setArr.map(String),
         correct: size,
-        note: null,
+        note: null
       });
     }
   }
   return qs;
 }
-
-function buildTwoSets({ overlapRange = [1, 2], onlyARange = [1, 2], onlyBRange = [1, 2] } = {}) {
-  const { pool, kind } = pickItemPool();
+function buildTwoSets({
+  overlapRange = [1, 2],
+  onlyARange = [1, 2],
+  onlyBRange = [1, 2]
+} = {}) {
+  const {
+    pool,
+    kind
+  } = pickItemPool();
   const overlapSize = overlapRange[0] + Math.floor(Math.random() * (overlapRange[1] - overlapRange[0] + 1));
   const overlap = sample(pool, overlapSize);
-  let remaining = pool.filter((it) => !overlap.includes(it));
+  let remaining = pool.filter(it => !overlap.includes(it));
   const onlyASize = onlyARange[0] + Math.floor(Math.random() * (onlyARange[1] - onlyARange[0] + 1));
   const onlyA = sample(remaining, Math.min(onlyASize, remaining.length));
-  remaining = remaining.filter((it) => !onlyA.includes(it));
+  remaining = remaining.filter(it => !onlyA.includes(it));
   const onlyBSize = onlyBRange[0] + Math.floor(Math.random() * (onlyBRange[1] - onlyBRange[0] + 1));
   const onlyB = sample(remaining, Math.min(onlyBSize, remaining.length));
-  remaining = remaining.filter((it) => !onlyB.includes(it));
+  remaining = remaining.filter(it => !onlyB.includes(it));
   const distractors = sample(remaining, Math.min(2, remaining.length));
-  return { pool, kind, overlap, onlyA, onlyB, distractors };
+  return {
+    pool,
+    kind,
+    overlap,
+    onlyA,
+    onlyB,
+    distractors
+  };
 }
-
-const EMPTY_OPTION = { id: "__EMPTY__", label: "∅ (prazan skup)", emoji: null };
-
+const EMPTY_OPTION = {
+  id: "__EMPTY__",
+  label: "∅ (prazan skup)",
+  emoji: null
+};
 function genSetOp(n = 8) {
   const qs = [];
   for (let i = 0; i < n; i++) {
     const displayStyle = Math.random() < 0.4 ? "venn" : "plain";
     const mode = Math.random() < 0.5 ? "unija" : "presjek";
     const disjoint = mode === "presjek" && Math.random() < 0.35;
-
-    const { kind, overlap, onlyA, onlyB, distractors } = disjoint
-      ? buildTwoSets({ overlapRange: [0, 0], onlyARange: [2, 3], onlyBRange: [2, 3] })
-      : buildTwoSets();
+    const {
+      kind,
+      overlap,
+      onlyA,
+      onlyB,
+      distractors
+    } = disjoint ? buildTwoSets({
+      overlapRange: [0, 0],
+      onlyARange: [2, 3],
+      onlyBRange: [2, 3]
+    }) : buildTwoSets();
     const setA = shuffle([...onlyA, ...overlap]);
     const setB = shuffle([...onlyB, ...overlap]);
-    let optionPool = shuffle([...setA, ...setB, ...distractors]).filter(
-      (v, idx, arr) => arr.findIndex((x) => x.id === v.id) === idx
-    );
-
+    let optionPool = shuffle([...setA, ...setB, ...distractors]).filter((v, idx, arr) => arr.findIndex(x => x.id === v.id) === idx);
     let correctIds, question;
     if (mode === "unija") {
-      const union = [...setA, ...setB].filter(
-        (v, idx, arr) => arr.findIndex((x) => x.id === v.id) === idx
-      );
-      correctIds = union.map((x) => x.id);
+      const union = [...setA, ...setB].filter((v, idx, arr) => arr.findIndex(x => x.id === v.id) === idx);
+      correctIds = union.map(x => x.id);
       question = "Odaberi sve elemente skupa A ∪ B (unija).";
     } else if (disjoint) {
       optionPool = [...optionPool, EMPTY_OPTION];
       correctIds = [EMPTY_OPTION.id];
       question = "Odaberi sve elemente skupa A ∩ B (presjek).";
     } else {
-      correctIds = overlap.map((x) => x.id);
+      correctIds = overlap.map(x => x.id);
       question = "Odaberi sve elemente skupa A ∩ B (presjek).";
     }
-
     qs.push({
       qid: uid(),
       type: "setop",
@@ -371,28 +488,32 @@ function genSetOp(n = 8) {
       options: optionPool,
       mode,
       question,
-      correctIds,
+      correctIds
     });
   }
   return qs;
 }
-
 function genSubset(n = 8) {
   const qs = [];
   for (let i = 0; i < n; i++) {
     const displayStyle = Math.random() < 0.4 ? "venn" : "plain";
     const isSubset = Math.random() < 0.5;
-    const { pool, kind, overlap, onlyA, onlyB } = buildTwoSets({
+    const {
+      pool,
+      kind,
+      overlap,
+      onlyA,
+      onlyB
+    } = buildTwoSets({
       overlapRange: isSubset ? [2, 4] : [1, 2],
       onlyARange: isSubset ? [0, 0] : [1, 2],
-      onlyBRange: [0, 2],
+      onlyBRange: [0, 2]
     });
     const setA = shuffle([...onlyA, ...overlap]);
     const setB = shuffle([...onlyB, ...overlap]);
     // safety: if A ends up empty, resample overlap minimally
     const finalOnlyA = onlyA;
     const finalCorrect = finalOnlyA.length === 0 && setA.length > 0;
-
     qs.push({
       qid: uid(),
       type: "subset",
@@ -403,26 +524,23 @@ function genSubset(n = 8) {
       onlyA: finalOnlyA,
       overlap,
       onlyB,
-      correct: finalCorrect,
+      correct: finalCorrect
     });
   }
   return qs;
 }
-
 function genPripadnostBrojevi(n = 8) {
   const half = Math.round(n / 2);
   const qs = [...genPripadnost(half), ...genKardinalnost(n - half)];
   return shuffle(qs);
 }
-
 const BANK_SIZE = 16;
 const SESSION_SIZE = 8;
-
 function buildDefaultBank() {
   return {
     "pripadnost-brojevi": genPripadnostBrojevi(BANK_SIZE),
     "unija-presjek": genSetOp(BANK_SIZE),
-    "podskup": genSubset(BANK_SIZE),
+    "podskup": genSubset(BANK_SIZE)
   };
 }
 
@@ -437,76 +555,94 @@ function generateQuestions(gameId, bank) {
 /* ---------------- manual question builders (for the teacher "Zadaci" editor) ---------------- */
 
 function parseTokens(str) {
-  return (str || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  return (str || "").split(",").map(s => s.trim()).filter(Boolean);
 }
-
 function toItems(tokens) {
   // de-duplicate case-insensitively while keeping first-seen casing
   const seen = new Map();
-  tokens.forEach((t) => {
+  tokens.forEach(t => {
     const key = t.toLowerCase();
-    if (!seen.has(key)) seen.set(key, { id: key, label: t, emoji: null });
+    if (!seen.has(key)) seen.set(key, {
+      id: key,
+      label: t,
+      emoji: null
+    });
   });
   return Array.from(seen.values());
 }
-
-function makeMembershipQuestion({ letter = "A", setArr, element, correct, qid }) {
+function makeMembershipQuestion({
+  letter = "A",
+  setArr,
+  element,
+  correct,
+  qid
+}) {
   return {
     qid: qid || uid(),
     type: "membership",
     letter,
     setArr: [...setArr].sort((a, b) => a - b),
     element,
-    correct,
+    correct
   };
 }
-
-function makeCountQuestion({ letter = "A", tokens, note, qid }) {
-  const unique = new Set(tokens.map((t) => t.trim().toLowerCase()).filter(Boolean));
+function makeCountQuestion({
+  letter = "A",
+  tokens,
+  note,
+  qid
+}) {
+  const unique = new Set(tokens.map(t => t.trim().toLowerCase()).filter(Boolean));
   return {
     qid: qid || uid(),
     type: "count",
     letter,
-    display: tokens.map((t) => t.trim()).filter(Boolean),
+    display: tokens.map(t => t.trim()).filter(Boolean),
     correct: unique.size,
-    note: note && note.trim() ? note.trim() : null,
+    note: note && note.trim() ? note.trim() : null
   };
 }
-
 function deriveSetOpFields(aTokens, bTokens, extraTokens = []) {
   const aItems = toItems(aTokens);
   const bItems = toItems(bTokens);
-  const bIds = new Set(bItems.map((x) => x.id));
-  const aIds = new Set(aItems.map((x) => x.id));
-  const overlap = aItems.filter((x) => bIds.has(x.id));
-  const onlyA = aItems.filter((x) => !bIds.has(x.id));
-  const onlyB = bItems.filter((x) => !aIds.has(x.id));
+  const bIds = new Set(bItems.map(x => x.id));
+  const aIds = new Set(aItems.map(x => x.id));
+  const overlap = aItems.filter(x => bIds.has(x.id));
+  const onlyA = aItems.filter(x => !bIds.has(x.id));
+  const onlyB = bItems.filter(x => !aIds.has(x.id));
   const setA = [...onlyA, ...overlap];
   const setB = [...onlyB, ...overlap];
-  const extras = toItems(extraTokens).filter((x) => !aIds.has(x.id) && !bIds.has(x.id));
-  const options = shuffle([...setA, ...setB, ...extras]).filter(
-    (v, idx, arr) => arr.findIndex((x) => x.id === v.id) === idx
-  );
-  return { onlyA, overlap, onlyB, setA, setB, options };
+  const extras = toItems(extraTokens).filter(x => !aIds.has(x.id) && !bIds.has(x.id));
+  const options = shuffle([...setA, ...setB, ...extras]).filter((v, idx, arr) => arr.findIndex(x => x.id === v.id) === idx);
+  return {
+    onlyA,
+    overlap,
+    onlyB,
+    setA,
+    setB,
+    options
+  };
 }
-
-function makeSetOpQuestion({ aTokens, bTokens, extraTokens = [], mode = "unija", displayStyle = "plain", qid }) {
-  const { onlyA, overlap, onlyB, setA, setB, options } = deriveSetOpFields(aTokens, bTokens, extraTokens);
+function makeSetOpQuestion({
+  aTokens,
+  bTokens,
+  extraTokens = [],
+  mode = "unija",
+  displayStyle = "plain",
+  qid
+}) {
+  const {
+    onlyA,
+    overlap,
+    onlyB,
+    setA,
+    setB,
+    options
+  } = deriveSetOpFields(aTokens, bTokens, extraTokens);
   const isEmptyIntersection = mode === "presjek" && overlap.length === 0;
-  const correctIds =
-    mode === "unija"
-      ? [...onlyA, ...overlap, ...onlyB].map((x) => x.id)
-      : isEmptyIntersection
-      ? [EMPTY_OPTION.id]
-      : overlap.map((x) => x.id);
+  const correctIds = mode === "unija" ? [...onlyA, ...overlap, ...onlyB].map(x => x.id) : isEmptyIntersection ? [EMPTY_OPTION.id] : overlap.map(x => x.id);
   const finalOptions = isEmptyIntersection ? [...options, EMPTY_OPTION] : options;
-  const question =
-    mode === "unija"
-      ? "Odaberi sve elemente skupa A ∪ B (unija)."
-      : "Odaberi sve elemente skupa A ∩ B (presjek).";
+  const question = mode === "unija" ? "Odaberi sve elemente skupa A ∪ B (unija)." : "Odaberi sve elemente skupa A ∩ B (presjek).";
   return {
     qid: qid || uid(),
     type: "setop",
@@ -520,12 +656,22 @@ function makeSetOpQuestion({ aTokens, bTokens, extraTokens = [], mode = "unija",
     options: finalOptions,
     mode,
     question,
-    correctIds,
+    correctIds
   };
 }
-
-function makeSubsetQuestion({ aTokens, bTokens, displayStyle = "plain", qid }) {
-  const { onlyA, overlap, onlyB, setA, setB } = deriveSetOpFields(aTokens, bTokens, []);
+function makeSubsetQuestion({
+  aTokens,
+  bTokens,
+  displayStyle = "plain",
+  qid
+}) {
+  const {
+    onlyA,
+    overlap,
+    onlyB,
+    setA,
+    setB
+  } = deriveSetOpFields(aTokens, bTokens, []);
   const correct = onlyA.length === 0 && setA.length > 0;
   return {
     qid: qid || uid(),
@@ -537,7 +683,7 @@ function makeSubsetQuestion({ aTokens, bTokens, displayStyle = "plain", qid }) {
     onlyA,
     overlap,
     onlyB,
-    correct,
+    correct
   };
 }
 
@@ -564,7 +710,6 @@ function describeQuestion(q) {
 // Every device that loads this page talks to the same URL, which is what
 // makes the teacher's and students' data shared across computers.
 const API_URL = "https://script.google.com/macros/s/AKfycby7zYVRGNcEfqlxP6W32TPajLkA1dZVO1fQA_ug2hZTfeZxUO6v-zfnVwR_Wr8p6g4r/exec";
-
 async function apiGet(action) {
   const res = await fetch(`${API_URL}?action=${action}&_=${Date.now()}`);
   if (!res.ok) throw new Error("Greška pri dohvaćanju (" + res.status + ")");
@@ -575,13 +720,14 @@ async function apiPost(payload) {
     method: "POST",
     // text/plain avoids a CORS preflight (OPTIONS) request, which Apps
     // Script web apps don't handle — the server still parses it as JSON.
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error("Greška pri spremanju (" + res.status + ")");
   return res.json();
 }
-
 async function loadBank() {
   try {
     const d = await apiGet("bank");
@@ -593,7 +739,10 @@ async function loadBank() {
 }
 async function saveBank(bank) {
   try {
-    await apiPost({ action: "saveBank", bank });
+    await apiPost({
+      action: "saveBank",
+      bank
+    });
   } catch (e) {
     console.error("Greška pri spremanju zadataka", e);
   }
@@ -609,12 +758,14 @@ async function loadDefaultBank() {
 }
 async function saveDefaultBank(bank) {
   try {
-    await apiPost({ action: "saveDefaultBank", bank });
+    await apiPost({
+      action: "saveDefaultBank",
+      bank
+    });
   } catch (e) {
     console.error("Greška pri spremanju zadanih zadataka", e);
   }
 }
-
 async function loadUsers() {
   try {
     const d = await apiGet("users");
@@ -626,7 +777,10 @@ async function loadUsers() {
 }
 async function saveUsers(list) {
   try {
-    await apiPost({ action: "saveUsers", users: list });
+    await apiPost({
+      action: "saveUsers",
+      users: list
+    });
   } catch (e) {
     console.error("Greška pri spremanju korisnika", e);
   }
@@ -642,38 +796,36 @@ async function loadAttempts() {
 }
 async function addAttemptRemote(attempt) {
   try {
-    await apiPost({ action: "addAttempt", attempt });
+    await apiPost({
+      action: "addAttempt",
+      attempt
+    });
   } catch (e) {
     console.error("Greška pri spremanju pokušaja", e);
   }
 }
-
 function seedUsers() {
-  return [
-    {
-      username: "ucitelj",
-      password: "SkupkoUcionica!",
-      ime: "Učiteljica",
-      prezime: "Demo",
-      role: "teacher",
-    },
-    {
-      username: "lana.barisic",
-      password: "Skupko24!",
-      ime: "Lana",
-      prezime: "Barišić",
-      role: "student",
-    },
-  ];
+  return [{
+    username: "ucitelj",
+    password: "SkupkoUcionica!",
+    ime: "Učiteljica",
+    prezime: "Demo",
+    role: "teacher"
+  }, {
+    username: "lana.barisic",
+    password: "Skupko24!",
+    ime: "Lana",
+    prezime: "Barišić",
+    role: "student"
+  }];
 }
 
 // Guarantees the two demo accounts always exist, no matter what was
 // previously written to storage (defends against a corrupted/empty list).
 function ensureDefaults(list) {
   const result = Array.isArray(list) ? [...list] : [];
-  const has = (username) =>
-    result.some((u) => u.username.toLowerCase() === username);
-  seedUsers().forEach((demo) => {
+  const has = username => result.some(u => u.username.toLowerCase() === username);
+  seedUsers().forEach(demo => {
     if (!has(demo.username)) result.push(demo);
   });
   return result;
@@ -683,147 +835,160 @@ function ensureDefaults(list) {
    Small UI primitives
    ============================================================ */
 
-function Logo({ size = 40 }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: size * 0.32,
-          background: NAVY,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            width: size * 0.52,
-            height: size * 0.52,
-            borderRadius: "50%",
-            background: CORAL,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: NAVY,
-            fontFamily: FONT_HEAD,
-            fontWeight: 700,
-            fontSize: size * 0.32,
-          }}
-        >
-          ∈
-        </div>
-      </div>
-      <span
-        style={{
-          fontFamily: FONT_HEAD,
-          fontWeight: 700,
-          fontSize: size * 0.5,
-          color: NAVY,
-        }}
-      >
-        skupko
-      </span>
-    </div>
-  );
+function Logo({
+  size = 40
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: size,
+      height: size,
+      borderRadius: size * 0.32,
+      background: NAVY,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: size * 0.52,
+      height: size * 0.52,
+      borderRadius: "50%",
+      background: CORAL,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: NAVY,
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      fontSize: size * 0.32
+    }
+  }, "\u2208")), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      fontSize: size * 0.5,
+      color: NAVY
+    }
+  }, "skupko"));
 }
-
-function Pill({ children, style }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "6px 14px",
-        borderRadius: 999,
-        background: "rgba(47,191,160,0.15)",
-        color: TEAL,
-        fontFamily: FONT_BODY,
-        fontWeight: 800,
-        fontSize: 12,
-        letterSpacing: 0.4,
-        ...style,
-      }}
-    >
-      {children}
-    </span>
-  );
+function Pill({
+  children,
+  style
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "6px 14px",
+      borderRadius: 999,
+      background: "rgba(47,191,160,0.15)",
+      color: TEAL,
+      fontFamily: FONT_BODY,
+      fontWeight: 800,
+      fontSize: 12,
+      letterSpacing: 0.4,
+      ...style
+    }
+  }, children);
 }
-
-function Button({ children, onClick, variant = "primary", disabled, style, type = "button" }) {
+function Button({
+  children,
+  onClick,
+  variant = "primary",
+  disabled,
+  style,
+  type = "button"
+}) {
   const variants = {
-    primary: { background: NAVY, color: "#fff" },
-    coral: { background: CORAL, color: "#fff" },
-    teal: { background: TEAL, color: "#fff" },
-    ghost: { background: "#fff", color: NAVY, border: `2px solid ${NAVY}` },
-    subtle: { background: "rgba(30,39,73,0.06)", color: NAVY },
+    primary: {
+      background: NAVY,
+      color: "#fff"
+    },
+    coral: {
+      background: CORAL,
+      color: "#fff"
+    },
+    teal: {
+      background: TEAL,
+      color: "#fff"
+    },
+    ghost: {
+      background: "#fff",
+      color: NAVY,
+      border: `2px solid ${NAVY}`
+    },
+    subtle: {
+      background: "rgba(30,39,73,0.06)",
+      color: NAVY
+    }
   };
-  return (
-    <button
-      type={type}
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        fontFamily: FONT_HEAD,
-        fontWeight: 700,
-        fontSize: 15,
-        padding: "12px 22px",
-        borderRadius: 14,
-        border: "none",
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.5 : 1,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        transition: "transform 0.1s ease",
-        ...variants[variant],
-        ...style,
-      }}
-      onMouseDown={(e) => {
-        if (!disabled) e.currentTarget.style.transform = "scale(0.97)";
-      }}
-      onMouseUp={(e) => {
-        e.currentTarget.style.transform = "scale(1)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "scale(1)";
-      }}
-    >
-      {children}
-    </button>
-  );
+  return /*#__PURE__*/React.createElement("button", {
+    type: type,
+    disabled: disabled,
+    onClick: onClick,
+    style: {
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      fontSize: 15,
+      padding: "12px 22px",
+      borderRadius: 14,
+      border: "none",
+      cursor: disabled ? "not-allowed" : "pointer",
+      opacity: disabled ? 0.5 : 1,
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8,
+      transition: "transform 0.1s ease",
+      ...variants[variant],
+      ...style
+    },
+    onMouseDown: e => {
+      if (!disabled) e.currentTarget.style.transform = "scale(0.97)";
+    },
+    onMouseUp: e => {
+      e.currentTarget.style.transform = "scale(1)";
+    },
+    onMouseLeave: e => {
+      e.currentTarget.style.transform = "scale(1)";
+    }
+  }, children);
 }
-
-function Card({ children, style }) {
-  return (
-    <div
-      style={{
-        background: "#fff",
-        borderRadius: 22,
-        padding: 24,
-        boxShadow: "0 6px 24px rgba(30,39,73,0.08)",
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
+function Card({
+  children,
+  style
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#fff",
+      borderRadius: 22,
+      padding: 24,
+      boxShadow: "0 6px 24px rgba(30,39,73,0.08)",
+      ...style
+    }
+  }, children);
 }
 
 /* ============================================================
    Login screen
    ============================================================ */
 
-function LoginScreen({ users, onLogin }) {
+function LoginScreen({
+  users,
+  onLogin
+}) {
   const [role, setRole] = useState("student");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
   function fillDemo() {
     if (role === "teacher") {
       setUsername("ucitelj");
@@ -834,171 +999,170 @@ function LoginScreen({ users, onLogin }) {
     }
     setError("");
   }
-
   function attemptLogin() {
-    const u = users.find(
-      (usr) =>
-        usr.username.trim().toLowerCase() === username.trim().toLowerCase() &&
-        usr.role === role
-    );
+    const u = users.find(usr => usr.username.trim().toLowerCase() === username.trim().toLowerCase() && usr.role === role);
     if (!u || u.password !== password.trim()) {
-      setError(
-        role === "student"
-          ? "Netočno korisničko ime ili lozinka. Provjeri podatke koje ti je dao/la učitelj/ica."
-          : "Netočno korisničko ime ili lozinka."
-      );
+      setError(role === "student" ? "Netočno korisničko ime ili lozinka. Provjeri podatke koje ti je dao/la učitelj/ica." : "Netočno korisničko ime ili lozinka.");
       return;
     }
     setError("");
     onLogin(u);
   }
-
   function handleKeyDown(e) {
     if (e.key === "Enter") attemptLogin();
   }
-
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: CREAM,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-        fontFamily: FONT_BODY,
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: 420 }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
-          <Logo size={48} />
-        </div>
-        <Card style={{ padding: 32 }}>
-          <Pill style={{ marginBottom: 14 }}>✨ MATEMATIČKO IGRALIŠTE</Pill>
-          <h1
-            style={{
-              fontFamily: FONT_HEAD,
-              fontSize: 30,
-              color: NAVY,
-              margin: "0 0 6px",
-              lineHeight: 1.15,
-            }}
-          >
-            Vježbaj skupove
-          </h1>
-          <p style={{ color: "#6B7280", margin: "0 0 22px", fontSize: 15 }}>
-            Prijavi se svojim korisničkim podacima i kreni igrati.
-          </p>
-
-          <div
-            style={{
-              display: "flex",
-              background: "rgba(30,39,73,0.06)",
-              borderRadius: 14,
-              padding: 4,
-              marginBottom: 20,
-            }}
-          >
-            {[
-              { id: "student", label: "Učenik", icon: GraduationCap },
-              { id: "teacher", label: "Učitelj", icon: School },
-            ].map((r) => (
-              <button
-                key={r.id}
-                onClick={() => {
-                  setRole(r.id);
-                  setError("");
-                }}
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  padding: "10px 0",
-                  borderRadius: 11,
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: FONT_HEAD,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  background: role === r.id ? YELLOW : "transparent",
-                  color: NAVY,
-                }}
-              >
-                <r.icon size={17} />
-                {r.label}
-              </button>
-            ))}
-          </div>
-
-          <div>
-            <label style={fieldLabelStyle}>Korisničko ime</label>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="npr. ana.horvat"
-              style={inputStyle}
-              autoFocus
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-            <label style={fieldLabelStyle}>Lozinka</label>
-            <input
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={handleKeyDown}
-              type="password"
-              placeholder="••••••••"
-              style={inputStyle}
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-            {error && (
-              <div
-                style={{
-                  color: CORAL,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  marginBottom: 10,
-                }}
-              >
-                {error}
-              </div>
-            )}
-            <Button onClick={attemptLogin} variant="coral" style={{ width: "100%", justifyContent: "center", marginTop: 6 }}>
-              Prijava <ChevronRight size={18} />
-            </Button>
-          </div>
-        </Card>
-        <div style={{ textAlign: "center", marginTop: 14 }}>
-          <button
-            onClick={fillDemo}
-            style={{
-              border: "none",
-              background: "none",
-              color: NAVY,
-              opacity: 0.6,
-              fontSize: 12,
-              cursor: "pointer",
-              textDecoration: "underline",
-              fontFamily: FONT_BODY,
-            }}
-          >
-            Ispuni probne podatke ({role === "teacher" ? "učitelj" : "učenik"})
-          </button>
-        </div>
-        <p style={{ textAlign: "center", color: "#9CA3AF", fontSize: 12, marginTop: 8 }}>
-          Podatke za prijavu dobiješ od svog učitelja/ice.
-        </p>
-      </div>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: CREAM,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+      fontFamily: FONT_BODY
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%",
+      maxWidth: 420
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "center",
+      marginBottom: 28
+    }
+  }, /*#__PURE__*/React.createElement(Logo, {
+    size: 48
+  })), /*#__PURE__*/React.createElement(Card, {
+    style: {
+      padding: 32
+    }
+  }, /*#__PURE__*/React.createElement(Pill, {
+    style: {
+      marginBottom: 14
+    }
+  }, "\u2728 MATEMATI\u010CKO IGRALI\u0160TE"), /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontFamily: FONT_HEAD,
+      fontSize: 30,
+      color: NAVY,
+      margin: "0 0 6px",
+      lineHeight: 1.15
+    }
+  }, "Vje\u017Ebaj skupove"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "#6B7280",
+      margin: "0 0 22px",
+      fontSize: 15
+    }
+  }, "Prijavi se svojim korisni\u010Dkim podacima i kreni igrati."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      background: "rgba(30,39,73,0.06)",
+      borderRadius: 14,
+      padding: 4,
+      marginBottom: 20
+    }
+  }, [{
+    id: "student",
+    label: "Učenik",
+    icon: GraduationCap
+  }, {
+    id: "teacher",
+    label: "Učitelj",
+    icon: School
+  }].map(r => /*#__PURE__*/React.createElement("button", {
+    key: r.id,
+    onClick: () => {
+      setRole(r.id);
+      setError("");
+    },
+    style: {
+      flex: 1,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      padding: "10px 0",
+      borderRadius: 11,
+      border: "none",
+      cursor: "pointer",
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      fontSize: 14,
+      background: role === r.id ? YELLOW : "transparent",
+      color: NAVY
+    }
+  }, /*#__PURE__*/React.createElement(r.icon, {
+    size: 17
+  }), r.label))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: fieldLabelStyle
+  }, "Korisni\u010Dko ime"), /*#__PURE__*/React.createElement("input", {
+    value: username,
+    onChange: e => setUsername(e.target.value),
+    onKeyDown: handleKeyDown,
+    placeholder: "npr. ana.horvat",
+    style: inputStyle,
+    autoFocus: true,
+    autoCapitalize: "none",
+    autoCorrect: "off",
+    spellCheck: false
+  }), /*#__PURE__*/React.createElement("label", {
+    style: fieldLabelStyle
+  }, "Lozinka"), /*#__PURE__*/React.createElement("input", {
+    value: password,
+    onChange: e => setPassword(e.target.value),
+    onKeyDown: handleKeyDown,
+    type: "password",
+    placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
+    style: inputStyle,
+    autoCapitalize: "none",
+    autoCorrect: "off",
+    spellCheck: false
+  }), error && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: CORAL,
+      fontSize: 13,
+      fontWeight: 700,
+      marginBottom: 10
+    }
+  }, error), /*#__PURE__*/React.createElement(Button, {
+    onClick: attemptLogin,
+    variant: "coral",
+    style: {
+      width: "100%",
+      justifyContent: "center",
+      marginTop: 6
+    }
+  }, "Prijava ", /*#__PURE__*/React.createElement(ChevronRight, {
+    size: 18
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      marginTop: 14
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: fillDemo,
+    style: {
+      border: "none",
+      background: "none",
+      color: NAVY,
+      opacity: 0.6,
+      fontSize: 12,
+      cursor: "pointer",
+      textDecoration: "underline",
+      fontFamily: FONT_BODY
+    }
+  }, "Ispuni probne podatke (", role === "teacher" ? "učitelj" : "učenik", ")")), /*#__PURE__*/React.createElement("p", {
+    style: {
+      textAlign: "center",
+      color: "#9CA3AF",
+      fontSize: 12,
+      marginTop: 8
+    }
+  }, "Podatke za prijavu dobije\u0161 od svog u\u010Ditelja/ice.")));
 }
-
 const fieldLabelStyle = {
   display: "block",
   fontFamily: FONT_BODY,
@@ -1006,9 +1170,8 @@ const fieldLabelStyle = {
   fontSize: 12,
   color: NAVY,
   marginBottom: 6,
-  marginTop: 10,
+  marginTop: 10
 };
-
 const inputStyle = {
   width: "100%",
   boxSizing: "border-box",
@@ -1018,14 +1181,17 @@ const inputStyle = {
   fontFamily: FONT_BODY,
   fontSize: 15,
   marginBottom: 4,
-  outline: "none",
+  outline: "none"
 };
 
 /* ============================================================
    TEACHER — Import
    ============================================================ */
 
-function ImportPanel({ users, onAddUsers }) {
+function ImportPanel({
+  users,
+  onAddUsers
+}) {
   const [preview, setPreview] = useState([]);
   const [fileName, setFileName] = useState("");
   const [manualIme, setManualIme] = useState("");
@@ -1033,10 +1199,9 @@ function ImportPanel({ users, onAddUsers }) {
   const [manualUsername, setManualUsername] = useState("");
   const [manualPassword, setManualPassword] = useState("");
   const fileRef = useRef(null);
-
   function normKeys(r) {
     const keys = {};
-    Object.keys(r).forEach((k) => {
+    Object.keys(r).forEach(k => {
       keys[k.trim().toLowerCase()] = r[k];
     });
     return keys;
@@ -1047,11 +1212,10 @@ function ImportPanel({ users, onAddUsers }) {
     }
     return "";
   }
-
   function buildRows(rawRows) {
-    const existing = new Set(users.map((u) => u.username.toLowerCase()));
+    const existing = new Set(users.map(u => u.username.toLowerCase()));
     const rows = [];
-    rawRows.forEach((r) => {
+    rawRows.forEach(r => {
       const keys = normKeys(r);
       let ime = pick(keys, "ime");
       let prezime = pick(keys, "prezime");
@@ -1061,10 +1225,8 @@ function ImportPanel({ users, onAddUsers }) {
         prezime = parts.slice(1).join(" ");
       }
       if (!ime || !prezime) return;
-
       const providedUsername = pick(keys, "korisnicko ime", "korisničko ime", "username", "korisnik", "user");
       const providedPassword = pick(keys, "lozinka", "password", "sifra", "šifra", "pass");
-
       let username, password, source;
       if (providedUsername && providedPassword) {
         // Existing credentials from another app — keep them exactly as given
@@ -1078,22 +1240,32 @@ function ImportPanel({ users, onAddUsers }) {
         source = "generirano";
       }
       existing.add(username.toLowerCase());
-      rows.push({ ime, prezime, username, password, role: "student", source });
+      rows.push({
+        ime,
+        prezime,
+        username,
+        password,
+        role: "student",
+        source
+      });
     });
     return rows;
   }
-
   function handleFile(e) {
     const file = e.target.files[0];
     if (!file) return;
     setFileName(file.name);
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = evt => {
       try {
         const data = new Uint8Array(evt.target.result);
-        const wb = XLSX.read(data, { type: "array" });
+        const wb = XLSX.read(data, {
+          type: "array"
+        });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        const rows = XLSX.utils.sheet_to_json(sheet, {
+          defval: ""
+        });
         setPreview(buildRows(rows));
       } catch (err) {
         console.error(err);
@@ -1102,28 +1274,30 @@ function ImportPanel({ users, onAddUsers }) {
     };
     reader.readAsArrayBuffer(file);
   }
-
   function addManual() {
     if (!manualIme.trim() || !manualPrezime.trim()) return;
-    const row = { Ime: manualIme, Prezime: manualPrezime };
+    const row = {
+      Ime: manualIme,
+      Prezime: manualPrezime
+    };
     if (manualUsername.trim()) row["Korisnicko ime"] = manualUsername.trim();
     if (manualPassword.trim()) row["Lozinka"] = manualPassword.trim();
     const rows = buildRows([row]);
-    setPreview((p) => [...p, ...rows]);
+    setPreview(p => [...p, ...rows]);
     setManualIme("");
     setManualPrezime("");
     setManualUsername("");
     setManualPassword("");
   }
-
   function updateField(idx, field, value) {
-    setPreview((p) => p.map((r, i) => (i === idx ? { ...r, [field]: value } : r)));
+    setPreview(p => p.map((r, i) => i === idx ? {
+      ...r,
+      [field]: value
+    } : r));
   }
-
   function removeFromPreview(idx) {
-    setPreview((p) => p.filter((_, i) => i !== idx));
+    setPreview(p => p.filter((_, i) => i !== idx));
   }
-
   function confirmImport() {
     if (preview.length === 0) return;
     onAddUsers(preview);
@@ -1131,16 +1305,13 @@ function ImportPanel({ users, onAddUsers }) {
     setFileName("");
     if (fileRef.current) fileRef.current.value = "";
   }
-
   function downloadCsv() {
-    const rows = preview.length
-      ? preview
-      : users.filter((u) => u.role === "student");
+    const rows = preview.length ? preview : users.filter(u => u.role === "student");
     const header = "Ime,Prezime,Korisnicko ime,Lozinka\n";
-    const body = rows
-      .map((r) => `${r.ime},${r.prezime},${r.username},${r.password}`)
-      .join("\n");
-    const blob = new Blob([header + body], { type: "text/csv;charset=utf-8;" });
+    const body = rows.map(r => `${r.ime},${r.prezime},${r.username},${r.password}`).join("\n");
+    const blob = new Blob([header + body], {
+      type: "text/csv;charset=utf-8;"
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1148,242 +1319,342 @@ function ImportPanel({ users, onAddUsers }) {
     a.click();
     URL.revokeObjectURL(url);
   }
-
-  return (
-    <div>
-      <Card style={{ marginBottom: 20 }}>
-        <h3 style={sectionTitle}>Uvoz iz Excela / CSV-a</h3>
-        <p style={{ color: "#6B7280", fontSize: 14, marginTop: 0 }}>
-          Datoteka treba imati stupce <b>Ime</b> i <b>Prezime</b> (ili jedan stupac{" "}
-          <b>Ime i prezime</b>). Ako učenici već imaju korisničko ime i lozinku iz
-          neke druge aplikacije, dodaj i stupce <b>Korisničko ime</b> i{" "}
-          <b>Lozinka</b> — Skupko će zadržati te iste podatke, pa se učenik svugdje
-          prijavljuje istom lozinkom. Za učenike bez tih stupaca (ili s praznim
-          poljima) korisničko ime i lozinka automatski će se generirati.
-        </p>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <label
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "12px 20px",
-              borderRadius: 14,
-              background: NAVY,
-              color: "#fff",
-              fontFamily: FONT_HEAD,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            <Upload size={17} />
-            Odaberi datoteku
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleFile}
-              style={{ display: "none" }}
-            />
-          </label>
-          {fileName && <span style={{ color: "#6B7280", fontSize: 14 }}>{fileName}</span>}
-        </div>
-
-        <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid rgba(30,39,73,0.08)" }}>
-          <div style={{ fontFamily: FONT_HEAD, fontWeight: 700, color: NAVY, fontSize: 14, marginBottom: 10 }}>
-            Ili dodaj ručno jednog učenika
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <input
-              value={manualIme}
-              onChange={(e) => setManualIme(e.target.value)}
-              placeholder="Ime"
-              style={{ ...inputStyle, width: 140, marginBottom: 0 }}
-            />
-            <input
-              value={manualPrezime}
-              onChange={(e) => setManualPrezime(e.target.value)}
-              placeholder="Prezime"
-              style={{ ...inputStyle, width: 140, marginBottom: 0 }}
-            />
-            <input
-              value={manualUsername}
-              onChange={(e) => setManualUsername(e.target.value)}
-              placeholder="Korisničko ime (ako već postoji)"
-              style={{ ...inputStyle, width: 210, marginBottom: 0 }}
-            />
-            <input
-              value={manualPassword}
-              onChange={(e) => setManualPassword(e.target.value)}
-              placeholder="Lozinka (ako već postoji)"
-              style={{ ...inputStyle, width: 190, marginBottom: 0 }}
-            />
-            <Button variant="subtle" onClick={addManual}>
-              <Plus size={16} /> Dodaj
-            </Button>
-          </div>
-          <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 8, marginBottom: 0 }}>
-            Korisničko ime i lozinku ostavi prazno ako ih učenik nema od prije — Skupko će ih sam generirati.
-          </p>
-        </div>
-      </Card>
-
-      {preview.length > 0 && (
-        <Card>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <h3 style={{ ...sectionTitle, margin: 0 }}>
-              Pregled ({preview.length} {preview.length === 1 ? "učenik" : "učenika"})
-            </h3>
-            <div style={{ display: "flex", gap: 10 }}>
-              <Button variant="ghost" onClick={downloadCsv}>
-                <Download size={16} /> Preuzmi CSV
-              </Button>
-              <Button variant="coral" onClick={confirmImport}>
-                <Check size={16} /> Potvrdi uvoz
-              </Button>
-            </div>
-          </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={tableStyle}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Ime i prezime</th>
-                  <th style={thStyle}>Korisničko ime</th>
-                  <th style={thStyle}>Lozinka</th>
-                  <th style={thStyle}>Izvor</th>
-                  <th style={thStyle}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {preview.map((r, idx) => (
-                  <tr key={idx}>
-                    <td style={tdStyle}>{r.ime} {r.prezime}</td>
-                    <td style={tdStyle}>
-                      <input
-                        value={r.username}
-                        onChange={(e) => updateField(idx, "username", e.target.value)}
-                        style={{ ...inputStyle, width: 150, marginBottom: 0, padding: "6px 8px", fontSize: 13, fontFamily: "monospace" }}
-                      />
-                    </td>
-                    <td style={tdStyle}>
-                      <input
-                        value={r.password}
-                        onChange={(e) => updateField(idx, "password", e.target.value)}
-                        style={{ ...inputStyle, width: 140, marginBottom: 0, padding: "6px 8px", fontSize: 13, fontFamily: "monospace" }}
-                      />
-                    </td>
-                    <td style={tdStyle}>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 800,
-                          padding: "4px 10px",
-                          borderRadius: 999,
-                          background: r.source === "postojeći" ? "rgba(47,191,160,0.15)" : "rgba(30,39,73,0.06)",
-                          color: r.source === "postojeći" ? TEAL : "#6B7280",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {r.source === "postojeći" ? "postojeći podaci" : "generirano"}
-                      </span>
-                    </td>
-                    <td style={tdStyle}>
-                      <button
-                        onClick={() => removeFromPreview(idx)}
-                        style={{ border: "none", background: "none", cursor: "pointer", color: "#9CA3AF" }}
-                        title="Ukloni"
-                      >
-                        <X size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Card, {
+    style: {
+      marginBottom: 20
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: sectionTitle
+  }, "Uvoz iz Excela / CSV-a"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "#6B7280",
+      fontSize: 14,
+      marginTop: 0
+    }
+  }, "Datoteka treba imati stupce ", /*#__PURE__*/React.createElement("b", null, "Ime"), " i ", /*#__PURE__*/React.createElement("b", null, "Prezime"), " (ili jedan stupac", " ", /*#__PURE__*/React.createElement("b", null, "Ime i prezime"), "). Ako u\u010Denici ve\u0107 imaju korisni\u010Dko ime i lozinku iz neke druge aplikacije, dodaj i stupce ", /*#__PURE__*/React.createElement("b", null, "Korisni\u010Dko ime"), " i", " ", /*#__PURE__*/React.createElement("b", null, "Lozinka"), " \u2014 Skupko \u0107e zadr\u017Eati te iste podatke, pa se u\u010Denik svugdje prijavljuje istom lozinkom. Za u\u010Denike bez tih stupaca (ili s praznim poljima) korisni\u010Dko ime i lozinka automatski \u0107e se generirati."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 12,
+      alignItems: "center",
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "12px 20px",
+      borderRadius: 14,
+      background: NAVY,
+      color: "#fff",
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement(Upload, {
+    size: 17
+  }), "Odaberi datoteku", /*#__PURE__*/React.createElement("input", {
+    ref: fileRef,
+    type: "file",
+    accept: ".xlsx,.xls,.csv",
+    onChange: handleFile,
+    style: {
+      display: "none"
+    }
+  })), fileName && /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#6B7280",
+      fontSize: 14
+    }
+  }, fileName)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 18,
+      paddingTop: 18,
+      borderTop: "1px solid rgba(30,39,73,0.08)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      color: NAVY,
+      fontSize: 14,
+      marginBottom: 10
+    }
+  }, "Ili dodaj ru\u010Dno jednog u\u010Denika"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: manualIme,
+    onChange: e => setManualIme(e.target.value),
+    placeholder: "Ime",
+    style: {
+      ...inputStyle,
+      width: 140,
+      marginBottom: 0
+    }
+  }), /*#__PURE__*/React.createElement("input", {
+    value: manualPrezime,
+    onChange: e => setManualPrezime(e.target.value),
+    placeholder: "Prezime",
+    style: {
+      ...inputStyle,
+      width: 140,
+      marginBottom: 0
+    }
+  }), /*#__PURE__*/React.createElement("input", {
+    value: manualUsername,
+    onChange: e => setManualUsername(e.target.value),
+    placeholder: "Korisni\u010Dko ime (ako ve\u0107 postoji)",
+    style: {
+      ...inputStyle,
+      width: 210,
+      marginBottom: 0
+    }
+  }), /*#__PURE__*/React.createElement("input", {
+    value: manualPassword,
+    onChange: e => setManualPassword(e.target.value),
+    placeholder: "Lozinka (ako ve\u0107 postoji)",
+    style: {
+      ...inputStyle,
+      width: 190,
+      marginBottom: 0
+    }
+  }), /*#__PURE__*/React.createElement(Button, {
+    variant: "subtle",
+    onClick: addManual
+  }, /*#__PURE__*/React.createElement(Plus, {
+    size: 16
+  }), " Dodaj")), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "#9CA3AF",
+      fontSize: 12,
+      marginTop: 8,
+      marginBottom: 0
+    }
+  }, "Korisni\u010Dko ime i lozinku ostavi prazno ako ih u\u010Denik nema od prije \u2014 Skupko \u0107e ih sam generirati."))), preview.length > 0 && /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: {
+      ...sectionTitle,
+      margin: 0
+    }
+  }, "Pregled (", preview.length, " ", preview.length === 1 ? "učenik" : "učenika", ")"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "ghost",
+    onClick: downloadCsv
+  }, /*#__PURE__*/React.createElement(Download, {
+    size: 16
+  }), " Preuzmi CSV"), /*#__PURE__*/React.createElement(Button, {
+    variant: "coral",
+    onClick: confirmImport
+  }, /*#__PURE__*/React.createElement(Check, {
+    size: 16
+  }), " Potvrdi uvoz"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowX: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    style: tableStyle
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Ime i prezime"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Korisni\u010Dko ime"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Lozinka"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Izvor"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }))), /*#__PURE__*/React.createElement("tbody", null, preview.map((r, idx) => /*#__PURE__*/React.createElement("tr", {
+    key: idx
+  }, /*#__PURE__*/React.createElement("td", {
+    style: tdStyle
+  }, r.ime, " ", r.prezime), /*#__PURE__*/React.createElement("td", {
+    style: tdStyle
+  }, /*#__PURE__*/React.createElement("input", {
+    value: r.username,
+    onChange: e => updateField(idx, "username", e.target.value),
+    style: {
+      ...inputStyle,
+      width: 150,
+      marginBottom: 0,
+      padding: "6px 8px",
+      fontSize: 13,
+      fontFamily: "monospace"
+    }
+  })), /*#__PURE__*/React.createElement("td", {
+    style: tdStyle
+  }, /*#__PURE__*/React.createElement("input", {
+    value: r.password,
+    onChange: e => updateField(idx, "password", e.target.value),
+    style: {
+      ...inputStyle,
+      width: 140,
+      marginBottom: 0,
+      padding: "6px 8px",
+      fontSize: 13,
+      fontFamily: "monospace"
+    }
+  })), /*#__PURE__*/React.createElement("td", {
+    style: tdStyle
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 800,
+      padding: "4px 10px",
+      borderRadius: 999,
+      background: r.source === "postojeći" ? "rgba(47,191,160,0.15)" : "rgba(30,39,73,0.06)",
+      color: r.source === "postojeći" ? TEAL : "#6B7280",
+      whiteSpace: "nowrap"
+    }
+  }, r.source === "postojeći" ? "postojeći podaci" : "generirano")), /*#__PURE__*/React.createElement("td", {
+    style: tdStyle
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => removeFromPreview(idx),
+    style: {
+      border: "none",
+      background: "none",
+      cursor: "pointer",
+      color: "#9CA3AF"
+    },
+    title: "Ukloni"
+  }, /*#__PURE__*/React.createElement(X, {
+    size: 16
+  }))))))))));
 }
-
 const sectionTitle = {
   fontFamily: FONT_HEAD,
   fontSize: 19,
   color: NAVY,
-  margin: "0 0 8px",
+  margin: "0 0 8px"
 };
-
-const tableStyle = { width: "100%", borderCollapse: "collapse", fontSize: 14, fontFamily: FONT_BODY };
-const thStyle = { textAlign: "left", padding: "8px 10px", color: "#9CA3AF", fontWeight: 700, fontSize: 12, textTransform: "uppercase", borderBottom: "2px solid rgba(30,39,73,0.08)" };
-const tdStyle = { padding: "10px 10px", borderBottom: "1px solid rgba(30,39,73,0.06)", color: INK };
+const tableStyle = {
+  width: "100%",
+  borderCollapse: "collapse",
+  fontSize: 14,
+  fontFamily: FONT_BODY
+};
+const thStyle = {
+  textAlign: "left",
+  padding: "8px 10px",
+  color: "#9CA3AF",
+  fontWeight: 700,
+  fontSize: 12,
+  textTransform: "uppercase",
+  borderBottom: "2px solid rgba(30,39,73,0.08)"
+};
+const tdStyle = {
+  padding: "10px 10px",
+  borderBottom: "1px solid rgba(30,39,73,0.06)",
+  color: INK
+};
 
 /* ============================================================
    TEACHER — Student list
    ============================================================ */
 
-function StudentListPanel({ students, attempts, onSelect, onDelete, onDownload }) {
-  return (
-    <Card>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <h3 style={{ ...sectionTitle, margin: 0 }}>Popis učenika ({students.length})</h3>
-        <Button variant="ghost" onClick={onDownload}>
-          <Download size={16} /> Preuzmi sve podatke
-        </Button>
-      </div>
-      {students.length === 0 ? (
-        <div style={{ color: "#9CA3AF", padding: "20px 0" }}>
-          Još nema učenika. Uvezi ih putem kartice "Uvoz".
-        </div>
-      ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={tableStyle}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Ime i prezime</th>
-                <th style={thStyle}>Korisničko ime</th>
-                <th style={thStyle}>Lozinka</th>
-                <th style={thStyle}>Odigrano</th>
-                <th style={thStyle}>Zadnja aktivnost</th>
-                <th style={thStyle}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((s) => {
-                const mine = attempts.filter((a) => a.username === s.username);
-                const last = mine.reduce((max, a) => (a.timestamp > max ? a.timestamp : max), 0);
-                return (
-                  <tr key={s.username}>
-                    <td style={tdStyle}>
-                      <button
-                        onClick={() => onSelect(s.username)}
-                        style={{ border: "none", background: "none", cursor: "pointer", color: NAVY, fontWeight: 700, textDecoration: "underline", padding: 0, fontFamily: FONT_BODY, fontSize: 14 }}
-                      >
-                        {s.ime} {s.prezime}
-                      </button>
-                    </td>
-                    <td style={tdStyle}><code>{s.username}</code></td>
-                    <td style={tdStyle}><code>{s.password}</code></td>
-                    <td style={tdStyle}>{mine.length}</td>
-                    <td style={tdStyle}>{last ? fmtDate(last) : "—"}</td>
-                    <td style={tdStyle}>
-                      <button
-                        onClick={() => onDelete(s.username)}
-                        style={{ border: "none", background: "none", cursor: "pointer", color: "#9CA3AF" }}
-                        title="Ukloni učenika"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </Card>
-  );
+function StudentListPanel({
+  students,
+  attempts,
+  onSelect,
+  onDelete,
+  onDownload
+}) {
+  return /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: {
+      ...sectionTitle,
+      margin: 0
+    }
+  }, "Popis u\u010Denika (", students.length, ")"), /*#__PURE__*/React.createElement(Button, {
+    variant: "ghost",
+    onClick: onDownload
+  }, /*#__PURE__*/React.createElement(Download, {
+    size: 16
+  }), " Preuzmi sve podatke")), students.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "#9CA3AF",
+      padding: "20px 0"
+    }
+  }, "Jo\u0161 nema u\u010Denika. Uvezi ih putem kartice \"Uvoz\".") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowX: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    style: tableStyle
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Ime i prezime"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Korisni\u010Dko ime"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Lozinka"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Odigrano"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Zadnja aktivnost"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }))), /*#__PURE__*/React.createElement("tbody", null, students.map(s => {
+    const mine = attempts.filter(a => a.username === s.username);
+    const last = mine.reduce((max, a) => a.timestamp > max ? a.timestamp : max, 0);
+    return /*#__PURE__*/React.createElement("tr", {
+      key: s.username
+    }, /*#__PURE__*/React.createElement("td", {
+      style: tdStyle
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => onSelect(s.username),
+      style: {
+        border: "none",
+        background: "none",
+        cursor: "pointer",
+        color: NAVY,
+        fontWeight: 700,
+        textDecoration: "underline",
+        padding: 0,
+        fontFamily: FONT_BODY,
+        fontSize: 14
+      }
+    }, s.ime, " ", s.prezime)), /*#__PURE__*/React.createElement("td", {
+      style: tdStyle
+    }, /*#__PURE__*/React.createElement("code", null, s.username)), /*#__PURE__*/React.createElement("td", {
+      style: tdStyle
+    }, /*#__PURE__*/React.createElement("code", null, s.password)), /*#__PURE__*/React.createElement("td", {
+      style: tdStyle
+    }, mine.length), /*#__PURE__*/React.createElement("td", {
+      style: tdStyle
+    }, last ? fmtDate(last) : "—"), /*#__PURE__*/React.createElement("td", {
+      style: tdStyle
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => onDelete(s.username),
+      style: {
+        border: "none",
+        background: "none",
+        cursor: "pointer",
+        color: "#9CA3AF"
+      },
+      title: "Ukloni u\u010Denika"
+    }, /*#__PURE__*/React.createElement(Trash2, {
+      size: 16
+    }))));
+  })))));
 }
 
 /* ============================================================
@@ -1395,534 +1666,830 @@ const TOPIC_FRAMING = {
     izvrsno: "sigurno i točno prepoznaje pripada li element skupu te bez greške broji elemente skupa",
     dobro: "uglavnom točno prepoznaje pripadnost elemenata skupu i broji elemente, uz povremene manje pogreške",
     djelomicno: "djelomično razumije pojam pripadnosti skupu i brojanja elemenata, no griješi u dijelu zadataka",
-    slabo: "još uvijek nesigurno prepoznaje pripadnost elemenata skupu i broji elemente skupa",
+    slabo: "još uvijek nesigurno prepoznaje pripadnost elemenata skupu i broji elemente skupa"
   },
   "unija-presjek": {
     izvrsno: "samostalno i točno primjenjuje uniju i presjek skupova, uključujući zadatke s Vennovim dijagramima",
     dobro: "uglavnom uspješno primjenjuje operacije unije i presjeka, uz povremene nedoumice kod Vennovih dijagrama",
     djelomicno: "djelomično uspijeva primijeniti uniju i presjek skupova, posebice kod zadataka s Vennovim dijagramom",
-    slabo: "treba dodatnu vježbu u primjeni operacija unije i presjeka skupova",
+    slabo: "treba dodatnu vježbu u primjeni operacija unije i presjeka skupova"
   },
   podskup: {
     izvrsno: "pouzdano uočava i obrazlaže odnos podskupa između zadanih skupova",
     dobro: "u većini slučajeva ispravno prosuđuje je li jedan skup podskup drugoga",
     djelomicno: "djelomično uočava odnos podskupa, često griješi kod procjene",
-    slabo: "još ne prepoznaje pouzdano odnos podskupa između skupova",
-  },
+    slabo: "još ne prepoznaje pouzdano odnos podskupa između skupova"
+  }
 };
-
 function levelFor(avg) {
   if (avg >= 85) return "izvrsno";
   if (avg >= 65) return "dobro";
   if (avg >= 40) return "djelomicno";
   return "slabo";
 }
-
 function generateProgressNote(perGame) {
-  const played = perGame.filter((g) => g.count > 0);
+  const played = perGame.filter(g => g.count > 0);
   if (played.length === 0) {
     return "Učenik/ca još nije riješio/la nijedan zadatak. Bilješka će se automatski generirati nakon prvih pokušaja.";
   }
-
   const overallAvg = Math.round(played.reduce((s, g) => s + g.avg, 0) / played.length);
-
-  const parts = played.map((g) => {
+  const parts = played.map(g => {
     const lvl = levelFor(g.avg);
     const framing = TOPIC_FRAMING[g.id];
     return `U temi „${g.name}” ${framing[lvl]} (prosjek ${g.avg}%).`;
   });
-
   let opener;
-  if (overallAvg >= 85) opener = "Učenik/ca pokazuje vrlo visoku razinu razumijevanja gradiva o skupovima.";
-  else if (overallAvg >= 65) opener = "Učenik/ca pokazuje solidno razumijevanje gradiva o skupovima.";
-  else if (overallAvg >= 40) opener = "Učenik/ca pokazuje djelomično razumijevanje gradiva o skupovima, s prostorom za napredak.";
-  else opener = "Učenik/ca tek usvaja osnovne pojmove vezane uz skupove i treba dodatnu podršku.";
-
-  const missing = GAMES.filter((g) => !played.find((p) => p.id === g.id));
+  if (overallAvg >= 85) opener = "Učenik/ca pokazuje vrlo visoku razinu razumijevanja gradiva o skupovima.";else if (overallAvg >= 65) opener = "Učenik/ca pokazuje solidno razumijevanje gradiva o skupovima.";else if (overallAvg >= 40) opener = "Učenik/ca pokazuje djelomično razumijevanje gradiva o skupovima, s prostorom za napredak.";else opener = "Učenik/ca tek usvaja osnovne pojmove vezane uz skupove i treba dodatnu podršku.";
+  const missing = GAMES.filter(g => !played.find(p => p.id === g.id));
   let closer;
   if (missing.length > 0) {
-    closer = `Preporuka: uključiti i zadatke iz teme ${missing.map((g) => `„${g.name}”`).join(" i ")} kako bi slika o napretku bila potpunija.`;
+    closer = `Preporuka: uključiti i zadatke iz teme ${missing.map(g => `„${g.name}”`).join(" i ")} kako bi slika o napretku bila potpunija.`;
   } else if (overallAvg < 65) {
     closer = "Preporuka: ponoviti temeljne pojmove kroz dodatnu vježbu prije prelaska na složenije zadatke.";
   } else {
     closer = "Preporuka: nastaviti s postupno zahtjevnijim zadacima kako bi se dodatno učvrstilo znanje.";
   }
-
   return [opener, ...parts, closer].join(" ");
 }
-
-function ProgressPanel({ students, attempts, selectedUsername, setSelectedUsername }) {
-  const student = students.find((s) => s.username === selectedUsername);
-  const mine = attempts.filter((a) => a.username === selectedUsername);
-
-  const perGame = GAMES.map((g) => {
-    const gAttempts = mine.filter((a) => a.game === g.id);
-    const pct = (a) => Math.round((a.score / a.maxScore) * 100);
+function ProgressPanel({
+  students,
+  attempts,
+  selectedUsername,
+  setSelectedUsername
+}) {
+  const student = students.find(s => s.username === selectedUsername);
+  const mine = attempts.filter(a => a.username === selectedUsername);
+  const perGame = GAMES.map(g => {
+    const gAttempts = mine.filter(a => a.game === g.id);
+    const pct = a => Math.round(a.score / a.maxScore * 100);
     const best = gAttempts.length ? Math.max(...gAttempts.map(pct)) : null;
-    const avg = gAttempts.length
-      ? Math.round(gAttempts.map(pct).reduce((s, v) => s + v, 0) / gAttempts.length)
-      : null;
-    const last = gAttempts.length ? Math.max(...gAttempts.map((a) => a.timestamp)) : null;
-    return { ...g, count: gAttempts.length, best, avg, last };
+    const avg = gAttempts.length ? Math.round(gAttempts.map(pct).reduce((s, v) => s + v, 0) / gAttempts.length) : null;
+    const last = gAttempts.length ? Math.max(...gAttempts.map(a => a.timestamp)) : null;
+    return {
+      ...g,
+      count: gAttempts.length,
+      best,
+      avg,
+      last
+    };
   });
-
-  const chartData = perGame
-    .filter((g) => g.count > 0)
-    .map((g) => ({ name: g.short, prosjek: g.avg }));
-
+  const chartData = perGame.filter(g => g.count > 0).map(g => ({
+    name: g.short,
+    prosjek: g.avg
+  }));
   if (!selectedUsername) {
-    return (
-      <Card>
-        <h3 style={sectionTitle}>Napredak učenika</h3>
-        <p style={{ color: "#6B7280" }}>Odaberi učenika s popisa da vidiš detaljan napredak.</p>
-        <select
-          value=""
-          onChange={(e) => setSelectedUsername(e.target.value)}
-          style={{ ...inputStyle, width: 280 }}
-        >
-          <option value="" disabled>Odaberi učenika…</option>
-          {students.map((s) => (
-            <option key={s.username} value={s.username}>{s.ime} {s.prezime}</option>
-          ))}
-        </select>
-      </Card>
-    );
+    return /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement("h3", {
+      style: sectionTitle
+    }, "Napredak u\u010Denika"), /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: "#6B7280"
+      }
+    }, "Odaberi u\u010Denika s popisa da vidi\u0161 detaljan napredak."), /*#__PURE__*/React.createElement("select", {
+      value: "",
+      onChange: e => setSelectedUsername(e.target.value),
+      style: {
+        ...inputStyle,
+        width: 280
+      }
+    }, /*#__PURE__*/React.createElement("option", {
+      value: "",
+      disabled: true
+    }, "Odaberi u\u010Denika\u2026"), students.map(s => /*#__PURE__*/React.createElement("option", {
+      key: s.username,
+      value: s.username
+    }, s.ime, " ", s.prezime))));
   }
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
-        <h3 style={{ ...sectionTitle, margin: 0 }}>
-          Napredak — {student ? `${student.ime} ${student.prezime}` : selectedUsername}
-        </h3>
-        <select
-          value={selectedUsername}
-          onChange={(e) => setSelectedUsername(e.target.value)}
-          style={{ ...inputStyle, width: 240, marginBottom: 0 }}
-        >
-          {students.map((s) => (
-            <option key={s.username} value={s.username}>{s.ime} {s.prezime}</option>
-          ))}
-        </select>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14, marginBottom: 18 }}>
-        {perGame.map((g) => (
-          <Card key={g.id} style={{ padding: 18 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: g.color + "22", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <g.icon size={17} color={g.color} />
-              </div>
-              <div style={{ fontFamily: FONT_HEAD, fontWeight: 700, color: NAVY, fontSize: 14 }}>{g.name}</div>
-            </div>
-            {g.count === 0 ? (
-              <div style={{ color: "#B0B5C0", fontSize: 13 }}>Još nije igrano</div>
-            ) : (
-              <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.9 }}>
-                <div>Pokušaja: <b style={{ color: INK }}>{g.count}</b></div>
-                <div>Najbolji rezultat: <b style={{ color: INK }}>{g.best}%</b></div>
-                <div>Prosjek: <b style={{ color: INK }}>{g.avg}%</b></div>
-                <div>Zadnji put: <b style={{ color: INK }}>{fmtDate(g.last)}</b></div>
-              </div>
-            )}
-          </Card>
-        ))}
-      </div>
-
-      <Card style={{ marginBottom: 18, background: "rgba(124,108,240,0.06)", border: `1px solid rgba(124,108,240,0.25)` }}>
-        <h4 style={{ ...sectionTitle, fontSize: 16 }}>Bilješka o napretku</h4>
-        <p style={{ color: INK, fontSize: 14, lineHeight: 1.7, margin: 0 }}>
-          {generateProgressNote(perGame)}
-        </p>
-      </Card>
-
-      {chartData.length > 0 && (
-        <Card style={{ marginBottom: 18 }}>
-          <h4 style={{ ...sectionTitle, fontSize: 16 }}>Prosječna uspješnost po igri</h4>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 28, height: 180, padding: "10px 10px 0" }}>
-            {chartData.map((d) => (
-              <div key={d.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-                <div style={{ fontFamily: FONT_HEAD, fontWeight: 700, color: NAVY, fontSize: 13, marginBottom: 4 }}>
-                  {d.prosjek}%
-                </div>
-                <div
-                  style={{
-                    width: "100%",
-                    maxWidth: 60,
-                    height: `${Math.max(4, (d.prosjek / 100) * 130)}px`,
-                    background: TEAL,
-                    borderRadius: "8px 8px 0 0",
-                  }}
-                />
-                <div style={{ fontFamily: FONT_BODY, fontSize: 12, color: "#6B7280", marginTop: 8, textAlign: "center" }}>
-                  {d.name}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      <Card>
-        <h4 style={{ ...sectionTitle, fontSize: 16 }}>Povijest pokušaja</h4>
-        {mine.length === 0 ? (
-          <div style={{ color: "#9CA3AF" }}>Nema zabilježenih pokušaja.</div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={tableStyle}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Igra</th>
-                  <th style={thStyle}>Rezultat</th>
-                  <th style={thStyle}>Trajanje</th>
-                  <th style={thStyle}>Kada</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...mine].sort((a, b) => b.timestamp - a.timestamp).map((a) => {
-                  const g = GAMES.find((x) => x.id === a.game);
-                  return (
-                    <tr key={a.id}>
-                      <td style={tdStyle}>{g ? g.name : a.game}</td>
-                      <td style={tdStyle}>{a.score}/{a.maxScore} ({Math.round((a.score / a.maxScore) * 100)}%)</td>
-                      <td style={tdStyle}>{a.durationSec}s</td>
-                      <td style={tdStyle}>{fmtDate(a.timestamp)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
+      flexWrap: "wrap",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: {
+      ...sectionTitle,
+      margin: 0
+    }
+  }, "Napredak \u2014 ", student ? `${student.ime} ${student.prezime}` : selectedUsername), /*#__PURE__*/React.createElement("select", {
+    value: selectedUsername,
+    onChange: e => setSelectedUsername(e.target.value),
+    style: {
+      ...inputStyle,
+      width: 240,
+      marginBottom: 0
+    }
+  }, students.map(s => /*#__PURE__*/React.createElement("option", {
+    key: s.username,
+    value: s.username
+  }, s.ime, " ", s.prezime)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+      gap: 14,
+      marginBottom: 18
+    }
+  }, perGame.map(g => /*#__PURE__*/React.createElement(Card, {
+    key: g.id,
+    style: {
+      padding: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      background: g.color + "22",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, /*#__PURE__*/React.createElement(g.icon, {
+    size: 17,
+    color: g.color
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      color: NAVY,
+      fontSize: 14
+    }
+  }, g.name)), g.count === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "#B0B5C0",
+      fontSize: 13
+    }
+  }, "Jo\u0161 nije igrano") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#6B7280",
+      lineHeight: 1.9
+    }
+  }, /*#__PURE__*/React.createElement("div", null, "Poku\u0161aja: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: INK
+    }
+  }, g.count)), /*#__PURE__*/React.createElement("div", null, "Najbolji rezultat: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: INK
+    }
+  }, g.best, "%")), /*#__PURE__*/React.createElement("div", null, "Prosjek: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: INK
+    }
+  }, g.avg, "%")), /*#__PURE__*/React.createElement("div", null, "Zadnji put: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: INK
+    }
+  }, fmtDate(g.last))))))), /*#__PURE__*/React.createElement(Card, {
+    style: {
+      marginBottom: 18,
+      background: "rgba(124,108,240,0.06)",
+      border: `1px solid rgba(124,108,240,0.25)`
+    }
+  }, /*#__PURE__*/React.createElement("h4", {
+    style: {
+      ...sectionTitle,
+      fontSize: 16
+    }
+  }, "Bilje\u0161ka o napretku"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: INK,
+      fontSize: 14,
+      lineHeight: 1.7,
+      margin: 0
+    }
+  }, generateProgressNote(perGame))), chartData.length > 0 && /*#__PURE__*/React.createElement(Card, {
+    style: {
+      marginBottom: 18
+    }
+  }, /*#__PURE__*/React.createElement("h4", {
+    style: {
+      ...sectionTitle,
+      fontSize: 16
+    }
+  }, "Prosje\u010Dna uspje\u0161nost po igri"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "flex-end",
+      gap: 28,
+      height: 180,
+      padding: "10px 10px 0"
+    }
+  }, chartData.map(d => /*#__PURE__*/React.createElement("div", {
+    key: d.name,
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      color: NAVY,
+      fontSize: 13,
+      marginBottom: 4
+    }
+  }, d.prosjek, "%"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%",
+      maxWidth: 60,
+      height: `${Math.max(4, d.prosjek / 100 * 130)}px`,
+      background: TEAL,
+      borderRadius: "8px 8px 0 0"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: FONT_BODY,
+      fontSize: 12,
+      color: "#6B7280",
+      marginTop: 8,
+      textAlign: "center"
+    }
+  }, d.name))))), /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement("h4", {
+    style: {
+      ...sectionTitle,
+      fontSize: 16
+    }
+  }, "Povijest poku\u0161aja"), mine.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "#9CA3AF"
+    }
+  }, "Nema zabilje\u017Eenih poku\u0161aja.") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      overflowX: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    style: tableStyle
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Igra"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Rezultat"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Trajanje"), /*#__PURE__*/React.createElement("th", {
+    style: thStyle
+  }, "Kada"))), /*#__PURE__*/React.createElement("tbody", null, [...mine].sort((a, b) => b.timestamp - a.timestamp).map(a => {
+    const g = GAMES.find(x => x.id === a.game);
+    return /*#__PURE__*/React.createElement("tr", {
+      key: a.id
+    }, /*#__PURE__*/React.createElement("td", {
+      style: tdStyle
+    }, g ? g.name : a.game), /*#__PURE__*/React.createElement("td", {
+      style: tdStyle
+    }, a.score, "/", a.maxScore, " (", Math.round(a.score / a.maxScore * 100), "%)"), /*#__PURE__*/React.createElement("td", {
+      style: tdStyle
+    }, a.durationSec, "s"), /*#__PURE__*/React.createElement("td", {
+      style: tdStyle
+    }, fmtDate(a.timestamp)));
+  }))))));
 }
 
 /* ============================================================
    TEACHER — class activity feed
    ============================================================ */
 
-function ActivityPanel({ students, attempts }) {
+function ActivityPanel({
+  students,
+  attempts
+}) {
   const feed = [...attempts].sort((a, b) => b.timestamp - a.timestamp).slice(0, 20);
-  const byUser = Object.fromEntries(students.map((s) => [s.username, s]));
-  return (
-    <Card>
-      <h3 style={sectionTitle}>Nedavna aktivnost razreda</h3>
-      {feed.length === 0 ? (
-        <div style={{ color: "#9CA3AF" }}>Još nema aktivnosti.</div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
-          {feed.map((a) => {
-            const s = byUser[a.username];
-            const g = GAMES.find((x) => x.id === a.game);
-            const pct = Math.round((a.score / a.maxScore) * 100);
-            return (
-              <div
-                key={a.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 14px",
-                  background: "rgba(30,39,73,0.03)",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  flexWrap: "wrap",
-                  gap: 6,
-                }}
-              >
-                <span>
-                  <b style={{ color: NAVY }}>{s ? `${s.ime} ${s.prezime}` : a.username}</b>{" "}
-                  <span style={{ color: "#6B7280" }}>je odigrao/la</span>{" "}
-                  <b>{g ? g.name : a.game}</b>
-                </span>
-                <span style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <span style={{ fontWeight: 800, color: pct >= 70 ? TEAL : pct >= 40 ? YELLOW : CORAL }}>
-                    {pct}%
-                  </span>
-                  <span style={{ color: "#9CA3AF", fontSize: 12 }}>{fmtDate(a.timestamp)}</span>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </Card>
-  );
+  const byUser = Object.fromEntries(students.map(s => [s.username, s]));
+  return /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement("h3", {
+    style: sectionTitle
+  }, "Nedavna aktivnost razreda"), feed.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "#9CA3AF"
+    }
+  }, "Jo\u0161 nema aktivnosti.") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
+      marginTop: 10
+    }
+  }, feed.map(a => {
+    const s = byUser[a.username];
+    const g = GAMES.find(x => x.id === a.game);
+    const pct = Math.round(a.score / a.maxScore * 100);
+    return /*#__PURE__*/React.createElement("div", {
+      key: a.id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "10px 14px",
+        background: "rgba(30,39,73,0.03)",
+        borderRadius: 12,
+        fontSize: 14,
+        flexWrap: "wrap",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", {
+      style: {
+        color: NAVY
+      }
+    }, s ? `${s.ime} ${s.prezime}` : a.username), " ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#6B7280"
+      }
+    }, "je odigrao/la"), " ", /*#__PURE__*/React.createElement("b", null, g ? g.name : a.game)), /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 14
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 800,
+        color: pct >= 70 ? TEAL : pct >= 40 ? YELLOW : CORAL
+      }
+    }, pct, "%"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#9CA3AF",
+        fontSize: 12
+      }
+    }, fmtDate(a.timestamp))));
+  })));
 }
 
 /* ============================================================
    TEACHER DASHBOARD
    ============================================================ */
 
-function Field({ label, value, onChange, width = 200, placeholder }) {
-  return (
-    <div style={{ width }}>
-      <label style={fieldLabelStyle}>{label}</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={{ ...inputStyle, marginBottom: 0 }}
-      />
-    </div>
-  );
+function Field({
+  label,
+  value,
+  onChange,
+  width = 200,
+  placeholder
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      width
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: fieldLabelStyle
+  }, label), /*#__PURE__*/React.createElement("input", {
+    value: value,
+    onChange: e => onChange(e.target.value),
+    placeholder: placeholder,
+    style: {
+      ...inputStyle,
+      marginBottom: 0
+    }
+  }));
 }
-
-function FieldSelect({ label, value, onChange, options, width = 140 }) {
-  const norm = options.map((o) => (Array.isArray(o) ? o : [o, o]));
-  return (
-    <div style={{ width }}>
-      <label style={fieldLabelStyle}>{label}</label>
-      <select value={value} onChange={(e) => onChange(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }}>
-        {norm.map(([v, l]) => (
-          <option key={v} value={v}>
-            {l}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
+function FieldSelect({
+  label,
+  value,
+  onChange,
+  options,
+  width = 140
+}) {
+  const norm = options.map(o => Array.isArray(o) ? o : [o, o]);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      width
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: fieldLabelStyle
+  }, label), /*#__PURE__*/React.createElement("select", {
+    value: value,
+    onChange: e => onChange(e.target.value),
+    style: {
+      ...inputStyle,
+      marginBottom: 0
+    }
+  }, norm.map(([v, l]) => /*#__PURE__*/React.createElement("option", {
+    key: v,
+    value: v
+  }, l))));
 }
-
-function QuestionEditor({ gameId, question, onCancel, onSave }) {
-  const initialSubType = question
-    ? question.type
-    : gameId === "pripadnost-brojevi"
-    ? "membership"
-    : gameId === "unija-presjek"
-    ? "setop"
-    : "subset";
+function QuestionEditor({
+  gameId,
+  question,
+  onCancel,
+  onSave
+}) {
+  const initialSubType = question ? question.type : gameId === "pripadnost-brojevi" ? "membership" : gameId === "unija-presjek" ? "setop" : "subset";
   const [subType, setSubType] = useState(initialSubType);
-
   const [letter, setLetter] = useState(question?.letter || "A");
   const [setArrText, setSetArrText] = useState(question?.type === "membership" ? question.setArr.join(", ") : "");
   const [elementText, setElementText] = useState(question?.type === "membership" ? String(question.element) : "");
   const [membershipCorrect, setMembershipCorrect] = useState(question?.type === "membership" ? question.correct : true);
-
   const [countTokensText, setCountTokensText] = useState(question?.type === "count" ? question.display.join(", ") : "");
   const [countNote, setCountNote] = useState(question?.type === "count" && question.note ? question.note : "");
-
-  const [aTokensText, setATokensText] = useState(
-    question && (question.type === "setop" || question.type === "subset") ? renderSetInline(question.setA) : ""
-  );
-  const [bTokensText, setBTokensText] = useState(
-    question && (question.type === "setop" || question.type === "subset") ? renderSetInline(question.setB) : ""
-  );
+  const [aTokensText, setATokensText] = useState(question && (question.type === "setop" || question.type === "subset") ? renderSetInline(question.setA) : "");
+  const [bTokensText, setBTokensText] = useState(question && (question.type === "setop" || question.type === "subset") ? renderSetInline(question.setB) : "");
   const [extraTokensText, setExtraTokensText] = useState("");
   const [mode, setMode] = useState(question?.type === "setop" ? question.mode : "unija");
-  const [displayStyle, setDisplayStyle] = useState(
-    question && (question.type === "setop" || question.type === "subset") ? question.displayStyle : "plain"
-  );
-
+  const [displayStyle, setDisplayStyle] = useState(question && (question.type === "setop" || question.type === "subset") ? question.displayStyle : "plain");
   const [error, setError] = useState("");
-
   function handleSave() {
     setError("");
     try {
       let q;
       if (gameId === "pripadnost-brojevi" && subType === "membership") {
-        const setArr = parseTokens(setArrText).map(Number).filter((n) => !Number.isNaN(n));
+        const setArr = parseTokens(setArrText).map(Number).filter(n => !Number.isNaN(n));
         const element = Number(elementText);
         if (setArr.length < 2) throw new Error("Unesi barem dva broja u skup.");
         if (Number.isNaN(element)) throw new Error("Element za provjeru mora biti broj.");
-        q = makeMembershipQuestion({ letter, setArr, element, correct: membershipCorrect });
+        q = makeMembershipQuestion({
+          letter,
+          setArr,
+          element,
+          correct: membershipCorrect
+        });
       } else if (gameId === "pripadnost-brojevi" && subType === "count") {
         const tokens = parseTokens(countTokensText);
         if (tokens.length < 1) throw new Error("Unesi barem jedan element skupa.");
-        q = makeCountQuestion({ letter, tokens, note: countNote });
+        q = makeCountQuestion({
+          letter,
+          tokens,
+          note: countNote
+        });
       } else if (gameId === "unija-presjek") {
         const aTokens = parseTokens(aTokensText);
         const bTokens = parseTokens(bTokensText);
         const extraTokens = parseTokens(extraTokensText);
         if (aTokens.length < 1 || bTokens.length < 1) throw new Error("Unesi elemente za oba skupa.");
-        q = makeSetOpQuestion({ aTokens, bTokens, extraTokens, mode, displayStyle });
+        q = makeSetOpQuestion({
+          aTokens,
+          bTokens,
+          extraTokens,
+          mode,
+          displayStyle
+        });
       } else if (gameId === "podskup") {
         const aTokens = parseTokens(aTokensText);
         const bTokens = parseTokens(bTokensText);
         if (aTokens.length < 1 || bTokens.length < 1) throw new Error("Unesi elemente za oba skupa.");
-        q = makeSubsetQuestion({ aTokens, bTokens, displayStyle });
+        q = makeSubsetQuestion({
+          aTokens,
+          bTokens,
+          displayStyle
+        });
       }
       onSave(q);
     } catch (e) {
       setError(e.message || "Greška u unosu.");
     }
   }
-
-  return (
-    <Card style={{ marginBottom: 16, border: `2px solid ${NAVY}` }}>
-      <h4 style={{ ...sectionTitle, fontSize: 16 }}>{question ? "Uredi zadatak" : "Novi zadatak"}</h4>
-
-      {gameId === "pripadnost-brojevi" && !question && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          {[
-            { id: "membership", label: "Pripadnost (∈ / ∉)" },
-            { id: "count", label: "Broj elemenata" },
-          ].map((o) => (
-            <button
-              key={o.id}
-              onClick={() => setSubType(o.id)}
-              style={{
-                padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-                fontFamily: FONT_HEAD, fontWeight: 700, fontSize: 13,
-                background: subType === o.id ? NAVY : "rgba(30,39,73,0.06)",
-                color: subType === o.id ? "#fff" : NAVY,
-              }}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {gameId === "pripadnost-brojevi" && subType === "membership" && (
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-          <FieldSelect label="Naziv skupa" value={letter} onChange={setLetter} options={["A", "B", "C"]} width={90} />
-          <Field label="Elementi skupa (brojevi, odvojeni zarezom)" value={setArrText} onChange={setSetArrText} width={260} placeholder="2, 5, 9, 14" />
-          <Field label="Element za provjeru" value={elementText} onChange={setElementText} width={140} placeholder="17" />
-          <FieldSelect label="Pripada skupu?" value={membershipCorrect ? "da" : "ne"} onChange={(v) => setMembershipCorrect(v === "da")} options={["da", "ne"]} width={110} />
-        </div>
-      )}
-
-      {gameId === "pripadnost-brojevi" && subType === "count" && (
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-          <FieldSelect label="Naziv skupa" value={letter} onChange={setLetter} options={["A", "B", "C"]} width={90} />
-          <Field label="Elementi (odvojeni zarezom; ponovi element za trik s ponavljanjem)" value={countTokensText} onChange={setCountTokensText} width={340} placeholder="jabuka, kruška, banana" />
-          <Field label="Napomena (neobavezno)" value={countNote} onChange={setCountNote} width={260} placeholder="" />
-        </div>
-      )}
-
-      {gameId === "unija-presjek" && (
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-          <Field label="Elementi skupa A (odvojeni zarezom)" value={aTokensText} onChange={setATokensText} width={240} placeholder="2, 4, 6, 8" />
-          <Field label="Elementi skupa B (odvojeni zarezom)" value={bTokensText} onChange={setBTokensText} width={240} placeholder="4, 8, 10" />
-          <Field label="Dodatne pogrešne opcije (neobavezno)" value={extraTokensText} onChange={setExtraTokensText} width={240} placeholder="3, 12" />
-          <FieldSelect label="Pitanje" value={mode} onChange={setMode} options={[["unija", "Unija A ∪ B"], ["presjek", "Presjek A ∩ B"]]} width={170} />
-          <FieldSelect label="Prikaz" value={displayStyle} onChange={setDisplayStyle} options={[["plain", "Obično"], ["venn", "Vennov dijagram"]]} width={170} />
-        </div>
-      )}
-
-      {gameId === "podskup" && (
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-          <Field label="Elementi skupa A (odvojeni zarezom)" value={aTokensText} onChange={setATokensText} width={240} placeholder="2, 4" />
-          <Field label="Elementi skupa B (odvojeni zarezom)" value={bTokensText} onChange={setBTokensText} width={240} placeholder="2, 4, 6, 8" />
-          <FieldSelect label="Prikaz" value={displayStyle} onChange={setDisplayStyle} options={[["plain", "Obično"], ["venn", "Vennov dijagram"]]} width={170} />
-        </div>
-      )}
-
-      {error && <div style={{ color: CORAL, fontSize: 13, fontWeight: 700, marginBottom: 10 }}>{error}</div>}
-
-      <div style={{ display: "flex", gap: 10 }}>
-        <Button variant="coral" onClick={handleSave}>Spremi</Button>
-        <Button variant="ghost" onClick={onCancel}>Odustani</Button>
-      </div>
-    </Card>
-  );
+  return /*#__PURE__*/React.createElement(Card, {
+    style: {
+      marginBottom: 16,
+      border: `2px solid ${NAVY}`
+    }
+  }, /*#__PURE__*/React.createElement("h4", {
+    style: {
+      ...sectionTitle,
+      fontSize: 16
+    }
+  }, question ? "Uredi zadatak" : "Novi zadatak"), gameId === "pripadnost-brojevi" && !question && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 14
+    }
+  }, [{
+    id: "membership",
+    label: "Pripadnost (∈ / ∉)"
+  }, {
+    id: "count",
+    label: "Broj elemenata"
+  }].map(o => /*#__PURE__*/React.createElement("button", {
+    key: o.id,
+    onClick: () => setSubType(o.id),
+    style: {
+      padding: "8px 14px",
+      borderRadius: 10,
+      border: "none",
+      cursor: "pointer",
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      fontSize: 13,
+      background: subType === o.id ? NAVY : "rgba(30,39,73,0.06)",
+      color: subType === o.id ? "#fff" : NAVY
+    }
+  }, o.label))), gameId === "pripadnost-brojevi" && subType === "membership" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement(FieldSelect, {
+    label: "Naziv skupa",
+    value: letter,
+    onChange: setLetter,
+    options: ["A", "B", "C"],
+    width: 90
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Elementi skupa (brojevi, odvojeni zarezom)",
+    value: setArrText,
+    onChange: setSetArrText,
+    width: 260,
+    placeholder: "2, 5, 9, 14"
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Element za provjeru",
+    value: elementText,
+    onChange: setElementText,
+    width: 140,
+    placeholder: "17"
+  }), /*#__PURE__*/React.createElement(FieldSelect, {
+    label: "Pripada skupu?",
+    value: membershipCorrect ? "da" : "ne",
+    onChange: v => setMembershipCorrect(v === "da"),
+    options: ["da", "ne"],
+    width: 110
+  })), gameId === "pripadnost-brojevi" && subType === "count" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement(FieldSelect, {
+    label: "Naziv skupa",
+    value: letter,
+    onChange: setLetter,
+    options: ["A", "B", "C"],
+    width: 90
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Elementi (odvojeni zarezom; ponovi element za trik s ponavljanjem)",
+    value: countTokensText,
+    onChange: setCountTokensText,
+    width: 340,
+    placeholder: "jabuka, kru\u0161ka, banana"
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Napomena (neobavezno)",
+    value: countNote,
+    onChange: setCountNote,
+    width: 260,
+    placeholder: ""
+  })), gameId === "unija-presjek" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Elementi skupa A (odvojeni zarezom)",
+    value: aTokensText,
+    onChange: setATokensText,
+    width: 240,
+    placeholder: "2, 4, 6, 8"
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Elementi skupa B (odvojeni zarezom)",
+    value: bTokensText,
+    onChange: setBTokensText,
+    width: 240,
+    placeholder: "4, 8, 10"
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Dodatne pogre\u0161ne opcije (neobavezno)",
+    value: extraTokensText,
+    onChange: setExtraTokensText,
+    width: 240,
+    placeholder: "3, 12"
+  }), /*#__PURE__*/React.createElement(FieldSelect, {
+    label: "Pitanje",
+    value: mode,
+    onChange: setMode,
+    options: [["unija", "Unija A ∪ B"], ["presjek", "Presjek A ∩ B"]],
+    width: 170
+  }), /*#__PURE__*/React.createElement(FieldSelect, {
+    label: "Prikaz",
+    value: displayStyle,
+    onChange: setDisplayStyle,
+    options: [["plain", "Obično"], ["venn", "Vennov dijagram"]],
+    width: 170
+  })), gameId === "podskup" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Elementi skupa A (odvojeni zarezom)",
+    value: aTokensText,
+    onChange: setATokensText,
+    width: 240,
+    placeholder: "2, 4"
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Elementi skupa B (odvojeni zarezom)",
+    value: bTokensText,
+    onChange: setBTokensText,
+    width: 240,
+    placeholder: "2, 4, 6, 8"
+  }), /*#__PURE__*/React.createElement(FieldSelect, {
+    label: "Prikaz",
+    value: displayStyle,
+    onChange: setDisplayStyle,
+    options: [["plain", "Obično"], ["venn", "Vennov dijagram"]],
+    width: 170
+  })), error && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: CORAL,
+      fontSize: 13,
+      fontWeight: 700,
+      marginBottom: 10
+    }
+  }, error), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "coral",
+    onClick: handleSave
+  }, "Spremi"), /*#__PURE__*/React.createElement(Button, {
+    variant: "ghost",
+    onClick: onCancel
+  }, "Odustani")));
 }
-
-function QuestionBankPanel({ bank, onAddQuestion, onUpdateQuestion, onDeleteQuestion, onResetBank }) {
+function QuestionBankPanel({
+  bank,
+  onAddQuestion,
+  onUpdateQuestion,
+  onDeleteQuestion,
+  onResetBank
+}) {
   const [activeGame, setActiveGame] = useState(GAMES[0].id);
   const [editing, setEditing] = useState(null); // null | "new" | qid
   const questions = bank[activeGame] || [];
-
   async function handleDelete(qid) {
     if (!window.confirm("Obrisati ovaj zadatak iz banke?")) return;
     await onDeleteQuestion(activeGame, qid);
   }
-
   async function handleReset() {
     if (!window.confirm("Vratiti zadatke ove teme na zadani (početni) popis? Ručne izmjene u ovoj temi bit će izgubljene.")) return;
     await onResetBank(activeGame);
   }
-
-  return (
-    <div>
-      <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {GAMES.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => { setActiveGame(g.id); setEditing(null); }}
-                style={{
-                  padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer",
-                  fontFamily: FONT_HEAD, fontWeight: 700, fontSize: 13,
-                  background: activeGame === g.id ? g.color : "rgba(30,39,73,0.06)",
-                  color: activeGame === g.id ? "#fff" : NAVY,
-                }}
-              >
-                {g.name}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <Button variant="ghost" onClick={handleReset}><RefreshCw size={15} /> Vrati na zadano</Button>
-            <Button variant="coral" onClick={() => setEditing("new")}><Plus size={15} /> Dodaj zadatak</Button>
-          </div>
-        </div>
-        <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 10, marginBottom: 0 }}>
-          {questions.length} zadataka u banci za ovu temu — svaka sesija igre nasumično odabire do {SESSION_SIZE} od njih.
-        </p>
-      </Card>
-
-      {editing && (
-        <QuestionEditor
-          gameId={activeGame}
-          question={editing === "new" ? null : questions.find((q) => q.qid === editing)}
-          onCancel={() => setEditing(null)}
-          onSave={async (q) => {
-            if (editing === "new") await onAddQuestion(activeGame, q);
-            else await onUpdateQuestion(activeGame, editing, q);
-            setEditing(null);
-          }}
-        />
-      )}
-
-      <Card>
-        {questions.length === 0 ? (
-          <div style={{ color: "#9CA3AF" }}>Nema zadataka u ovoj temi.</div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {questions.map((q) => (
-              <div
-                key={q.qid}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 12px", background: "rgba(30,39,73,0.03)", borderRadius: 10 }}
-              >
-                <span style={{ fontSize: 13, color: INK }}>{describeQuestion(q)}</span>
-                <span style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-                  <button onClick={() => setEditing(q.qid)} style={{ border: "none", background: "none", cursor: "pointer", color: NAVY }} title="Uredi">
-                    <Pencil size={15} />
-                  </button>
-                  <button onClick={() => handleDelete(q.qid)} style={{ border: "none", background: "none", cursor: "pointer", color: "#9CA3AF" }} title="Obriši">
-                    <Trash2 size={15} />
-                  </button>
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Card, {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap"
+    }
+  }, GAMES.map(g => /*#__PURE__*/React.createElement("button", {
+    key: g.id,
+    onClick: () => {
+      setActiveGame(g.id);
+      setEditing(null);
+    },
+    style: {
+      padding: "8px 14px",
+      borderRadius: 10,
+      border: "none",
+      cursor: "pointer",
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      fontSize: 13,
+      background: activeGame === g.id ? g.color : "rgba(30,39,73,0.06)",
+      color: activeGame === g.id ? "#fff" : NAVY
+    }
+  }, g.name))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "ghost",
+    onClick: handleReset
+  }, /*#__PURE__*/React.createElement(RefreshCw, {
+    size: 15
+  }), " Vrati na zadano"), /*#__PURE__*/React.createElement(Button, {
+    variant: "coral",
+    onClick: () => setEditing("new")
+  }, /*#__PURE__*/React.createElement(Plus, {
+    size: 15
+  }), " Dodaj zadatak"))), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "#9CA3AF",
+      fontSize: 12,
+      marginTop: 10,
+      marginBottom: 0
+    }
+  }, questions.length, " zadataka u banci za ovu temu \u2014 svaka sesija igre nasumi\u010Dno odabire do ", SESSION_SIZE, " od njih.")), editing && /*#__PURE__*/React.createElement(QuestionEditor, {
+    gameId: activeGame,
+    question: editing === "new" ? null : questions.find(q => q.qid === editing),
+    onCancel: () => setEditing(null),
+    onSave: async q => {
+      if (editing === "new") await onAddQuestion(activeGame, q);else await onUpdateQuestion(activeGame, editing, q);
+      setEditing(null);
+    }
+  }), /*#__PURE__*/React.createElement(Card, null, questions.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "#9CA3AF"
+    }
+  }, "Nema zadataka u ovoj temi.") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, questions.map(q => /*#__PURE__*/React.createElement("div", {
+    key: q.qid,
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 10,
+      padding: "10px 12px",
+      background: "rgba(30,39,73,0.03)",
+      borderRadius: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: INK
+    }
+  }, describeQuestion(q)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      gap: 10,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditing(q.qid),
+    style: {
+      border: "none",
+      background: "none",
+      cursor: "pointer",
+      color: NAVY
+    },
+    title: "Uredi"
+  }, /*#__PURE__*/React.createElement(Pencil, {
+    size: 15
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: () => handleDelete(q.qid),
+    style: {
+      border: "none",
+      background: "none",
+      cursor: "pointer",
+      color: "#9CA3AF"
+    },
+    title: "Obri\u0161i"
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    size: 15
+  }))))))));
 }
-
-function TeacherDashboard({ user, users, attempts, bank, onAddUsers, onDeleteUser, onAddQuestion, onUpdateQuestion, onDeleteQuestion, onResetBank, onLogout, onRefresh, syncError }) {
+function TeacherDashboard({
+  user,
+  users,
+  attempts,
+  bank,
+  onAddUsers,
+  onDeleteUser,
+  onAddQuestion,
+  onUpdateQuestion,
+  onDeleteQuestion,
+  onResetBank,
+  onLogout,
+  onRefresh,
+  syncError
+}) {
   const [tab, setTab] = useState("ucenici");
   const [selectedUsername, setSelectedUsername] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const students = users.filter((u) => u.role === "student");
-
+  const students = users.filter(u => u.role === "student");
   async function handleRefreshClick() {
     setRefreshing(true);
     await onRefresh();
     setRefreshing(false);
   }
-
   function downloadAll() {
     const header = "Ime,Prezime,Korisnicko ime,Lozinka\n";
-    const body = students.map((r) => `${r.ime},${r.prezime},${r.username},${r.password}`).join("\n");
-    const blob = new Blob([header + body], { type: "text/csv;charset=utf-8;" });
+    const body = students.map(r => `${r.ime},${r.prezime},${r.username},${r.password}`).join("\n");
+    const blob = new Blob([header + body], {
+      type: "text/csv;charset=utf-8;"
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1930,155 +2497,286 @@ function TeacherDashboard({ user, users, attempts, bank, onAddUsers, onDeleteUse
     a.click();
     URL.revokeObjectURL(url);
   }
-
-  return (
-    <div style={{ minHeight: "100vh", background: CREAM, fontFamily: FONT_BODY }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 28px", background: "#fff", boxShadow: "0 2px 10px rgba(30,39,73,0.05)" }}>
-        <Logo size={34} />
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <span style={{ color: "#6B7280", fontSize: 14 }}>Prijavljen/a kao <b style={{ color: NAVY }}>{user.ime}</b></span>
-          <Button variant="ghost" onClick={handleRefreshClick} disabled={refreshing}>
-            <RefreshCw size={16} /> {refreshing ? "Osvježavam…" : "Osvježi"}
-          </Button>
-          <Button variant="ghost" onClick={onLogout}><LogOut size={16} /> Odjava</Button>
-        </div>
-      </div>
-
-      {syncError && (
-        <div style={{ background: "#FFF1EE", color: CORAL, textAlign: "center", padding: "8px 12px", fontSize: 13, fontWeight: 700 }}>
-          Nije uspjelo dohvaćanje najnovijih podataka s Google Sheeta. Provjeri internetsku vezu i pokušaj "Osvježi".
-        </div>
-      )}
-
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "28px 20px" }}>
-        <h1 style={{ fontFamily: FONT_HEAD, color: NAVY, fontSize: 26, marginBottom: 4 }}>Učiteljski pregled</h1>
-        <p style={{ color: "#6B7280", marginTop: 0, marginBottom: 22 }}>
-          Uvezi učenike, prati njihov napredak i pregledaj aktivnost razreda.
-        </p>
-
-        <div style={{ display: "flex", gap: 8, marginBottom: 22, flexWrap: "wrap" }}>
-          {[
-            { id: "ucenici", label: "Popis i uvoz", icon: Users },
-            { id: "napredak", label: "Napredak", icon: BarChart3 },
-            { id: "aktivnost", label: "Aktivnost razreda", icon: Sparkles },
-            { id: "zadaci", label: "Zadaci", icon: BookOpen },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "10px 18px",
-                borderRadius: 12,
-                border: "none",
-                cursor: "pointer",
-                fontFamily: FONT_HEAD,
-                fontWeight: 700,
-                fontSize: 14,
-                background: tab === t.id ? NAVY : "#fff",
-                color: tab === t.id ? "#fff" : NAVY,
-              }}
-            >
-              <t.icon size={16} /> {t.label}
-            </button>
-          ))}
-        </div>
-
-        {tab === "ucenici" && (
-          <div>
-            <ImportPanel users={users} onAddUsers={onAddUsers} />
-            <div style={{ height: 20 }} />
-            <StudentListPanel
-              students={students}
-              attempts={attempts}
-              onSelect={(u) => { setSelectedUsername(u); setTab("napredak"); }}
-              onDelete={onDeleteUser}
-              onDownload={downloadAll}
-            />
-          </div>
-        )}
-        {tab === "napredak" && (
-          <ProgressPanel
-            students={students}
-            attempts={attempts}
-            selectedUsername={selectedUsername}
-            setSelectedUsername={setSelectedUsername}
-          />
-        )}
-        {tab === "aktivnost" && <ActivityPanel students={students} attempts={attempts} />}
-        {tab === "zadaci" && (
-          <QuestionBankPanel
-            bank={bank}
-            onAddQuestion={onAddQuestion}
-            onUpdateQuestion={onUpdateQuestion}
-            onDeleteQuestion={onDeleteQuestion}
-            onResetBank={onResetBank}
-          />
-        )}
-      </div>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: CREAM,
+      fontFamily: FONT_BODY
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "18px 28px",
+      background: "#fff",
+      boxShadow: "0 2px 10px rgba(30,39,73,0.05)"
+    }
+  }, /*#__PURE__*/React.createElement(Logo, {
+    size: 34
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 16
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#6B7280",
+      fontSize: 14
+    }
+  }, "Prijavljen/a kao ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: NAVY
+    }
+  }, user.ime)), /*#__PURE__*/React.createElement(Button, {
+    variant: "ghost",
+    onClick: handleRefreshClick,
+    disabled: refreshing
+  }, /*#__PURE__*/React.createElement(RefreshCw, {
+    size: 16
+  }), " ", refreshing ? "Osvježavam…" : "Osvježi"), /*#__PURE__*/React.createElement(Button, {
+    variant: "ghost",
+    onClick: onLogout
+  }, /*#__PURE__*/React.createElement(LogOut, {
+    size: 16
+  }), " Odjava"))), syncError && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#FFF1EE",
+      color: CORAL,
+      textAlign: "center",
+      padding: "8px 12px",
+      fontSize: 13,
+      fontWeight: 700
+    }
+  }, "Nije uspjelo dohva\u0107anje najnovijih podataka s Google Sheeta. Provjeri internetsku vezu i poku\u0161aj \"Osvje\u017Ei\"."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 1080,
+      margin: "0 auto",
+      padding: "28px 20px"
+    }
+  }, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontFamily: FONT_HEAD,
+      color: NAVY,
+      fontSize: 26,
+      marginBottom: 4
+    }
+  }, "U\u010Diteljski pregled"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "#6B7280",
+      marginTop: 0,
+      marginBottom: 22
+    }
+  }, "Uvezi u\u010Denike, prati njihov napredak i pregledaj aktivnost razreda."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 22,
+      flexWrap: "wrap"
+    }
+  }, [{
+    id: "ucenici",
+    label: "Popis i uvoz",
+    icon: Users
+  }, {
+    id: "napredak",
+    label: "Napredak",
+    icon: BarChart3
+  }, {
+    id: "aktivnost",
+    label: "Aktivnost razreda",
+    icon: Sparkles
+  }, {
+    id: "zadaci",
+    label: "Zadaci",
+    icon: BookOpen
+  }].map(t => /*#__PURE__*/React.createElement("button", {
+    key: t.id,
+    onClick: () => setTab(t.id),
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "10px 18px",
+      borderRadius: 12,
+      border: "none",
+      cursor: "pointer",
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      fontSize: 14,
+      background: tab === t.id ? NAVY : "#fff",
+      color: tab === t.id ? "#fff" : NAVY
+    }
+  }, /*#__PURE__*/React.createElement(t.icon, {
+    size: 16
+  }), " ", t.label))), tab === "ucenici" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ImportPanel, {
+    users: users,
+    onAddUsers: onAddUsers
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 20
+    }
+  }), /*#__PURE__*/React.createElement(StudentListPanel, {
+    students: students,
+    attempts: attempts,
+    onSelect: u => {
+      setSelectedUsername(u);
+      setTab("napredak");
+    },
+    onDelete: onDeleteUser,
+    onDownload: downloadAll
+  })), tab === "napredak" && /*#__PURE__*/React.createElement(ProgressPanel, {
+    students: students,
+    attempts: attempts,
+    selectedUsername: selectedUsername,
+    setSelectedUsername: setSelectedUsername
+  }), tab === "aktivnost" && /*#__PURE__*/React.createElement(ActivityPanel, {
+    students: students,
+    attempts: attempts
+  }), tab === "zadaci" && /*#__PURE__*/React.createElement(QuestionBankPanel, {
+    bank: bank,
+    onAddQuestion: onAddQuestion,
+    onUpdateQuestion: onUpdateQuestion,
+    onDeleteQuestion: onDeleteQuestion,
+    onResetBank: onResetBank
+  })));
 }
 
 /* ============================================================
    STUDENT — game menu
    ============================================================ */
 
-function GameMenu({ user, attempts, onPick, onLogout }) {
-  const mine = attempts.filter((a) => a.username === user.username);
-  return (
-    <div style={{ minHeight: "100vh", background: CREAM, fontFamily: FONT_BODY }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 28px", background: "#fff", boxShadow: "0 2px 10px rgba(30,39,73,0.05)" }}>
-        <Logo size={34} />
-        <Button variant="ghost" onClick={onLogout}><LogOut size={16} /> Odjava</Button>
-      </div>
-
-      <div style={{ maxWidth: 920, margin: "0 auto", padding: "32px 20px" }}>
-        <Pill style={{ marginBottom: 12 }}>👋 BOK, {user.ime.toUpperCase()}</Pill>
-        <h1 style={{ fontFamily: FONT_HEAD, color: NAVY, fontSize: 30, margin: "0 0 6px" }}>
-          Odaberi igru
-        </h1>
-        <p style={{ color: "#6B7280", marginTop: 0, marginBottom: 26 }}>
-          Odigrao/la si {mine.length} {mine.length === 1 ? "put" : "puta"} do sada. Nastavi vježbati!
-        </p>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 18 }}>
-          {GAMES.map((g) => {
-            const gMine = mine.filter((a) => a.game === g.id);
-            const best = gMine.length ? Math.max(...gMine.map((a) => Math.round((a.score / a.maxScore) * 100))) : null;
-            return (
-              <Card
-                key={g.id}
-                style={{ cursor: "pointer", border: `2px solid transparent` }}
-              >
-                <div
-                  onClick={() => onPick(g.id)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <div style={{ width: 48, height: 48, borderRadius: 14, background: g.color + "22", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-                    <g.icon size={24} color={g.color} />
-                  </div>
-                  <div style={{ fontFamily: FONT_HEAD, fontWeight: 700, color: NAVY, fontSize: 18 }}>{g.name}</div>
-                  <div style={{ color: g.color, fontWeight: 800, fontSize: 13, margin: "4px 0 8px" }}>{g.short}</div>
-                  <p style={{ color: "#6B7280", fontSize: 14, margin: "0 0 14px" }}>{g.desc}</p>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 12, color: "#9CA3AF" }}>
-                      {best !== null ? `Najbolje: ${best}%` : "Još nije igrano"}
-                    </span>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4, color: g.color, fontWeight: 700, fontSize: 13 }}>
-                      Igraj <ChevronRight size={16} />
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
+function GameMenu({
+  user,
+  attempts,
+  onPick,
+  onLogout
+}) {
+  const mine = attempts.filter(a => a.username === user.username);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: CREAM,
+      fontFamily: FONT_BODY
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "18px 28px",
+      background: "#fff",
+      boxShadow: "0 2px 10px rgba(30,39,73,0.05)"
+    }
+  }, /*#__PURE__*/React.createElement(Logo, {
+    size: 34
+  }), /*#__PURE__*/React.createElement(Button, {
+    variant: "ghost",
+    onClick: onLogout
+  }, /*#__PURE__*/React.createElement(LogOut, {
+    size: 16
+  }), " Odjava")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 920,
+      margin: "0 auto",
+      padding: "32px 20px"
+    }
+  }, /*#__PURE__*/React.createElement(Pill, {
+    style: {
+      marginBottom: 12
+    }
+  }, "\uD83D\uDC4B BOK, ", user.ime.toUpperCase()), /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontFamily: FONT_HEAD,
+      color: NAVY,
+      fontSize: 30,
+      margin: "0 0 6px"
+    }
+  }, "Odaberi igru"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "#6B7280",
+      marginTop: 0,
+      marginBottom: 26
+    }
+  }, "Odigrao/la si ", mine.length, " ", mine.length === 1 ? "put" : "puta", " do sada. Nastavi vje\u017Ebati!"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+      gap: 18
+    }
+  }, GAMES.map(g => {
+    const gMine = mine.filter(a => a.game === g.id);
+    const best = gMine.length ? Math.max(...gMine.map(a => Math.round(a.score / a.maxScore * 100))) : null;
+    return /*#__PURE__*/React.createElement(Card, {
+      key: g.id,
+      style: {
+        cursor: "pointer",
+        border: `2px solid transparent`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      onClick: () => onPick(g.id),
+      style: {
+        cursor: "pointer"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        background: g.color + "22",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement(g.icon, {
+      size: 24,
+      color: g.color
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: FONT_HEAD,
+        fontWeight: 700,
+        color: NAVY,
+        fontSize: 18
+      }
+    }, g.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: g.color,
+        fontWeight: 800,
+        fontSize: 13,
+        margin: "4px 0 8px"
+      }
+    }, g.short), /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: "#6B7280",
+        fontSize: 14,
+        margin: "0 0 14px"
+      }
+    }, g.desc), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        color: "#9CA3AF"
+      }
+    }, best !== null ? `Najbolje: ${best}%` : "Još nije igrano"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        color: g.color,
+        fontWeight: 700,
+        fontSize: 13
+      }
+    }, "Igraj ", /*#__PURE__*/React.createElement(ChevronRight, {
+      size: 16
+    })))));
+  }))));
 }
 
 /* ============================================================
@@ -2087,412 +2785,714 @@ function GameMenu({ user, attempts, onPick, onLogout }) {
 
 function renderSetInline(items) {
   if (items.length === 0) return "∅";
-  return items.map((it) => (it.emoji ? `${it.emoji} ${it.label}` : it.label)).join(", ");
+  return items.map(it => it.emoji ? `${it.emoji} ${it.label}` : it.label).join(", ");
 }
-
-function VennDiagram({ onlyA, overlap, onlyB, labelA = "A", labelB = "B" }) {
-  const W = 460, H = 260;
+function VennDiagram({
+  onlyA,
+  overlap,
+  onlyB,
+  labelA = "A",
+  labelB = "B"
+}) {
+  const W = 460,
+    H = 260;
   const r = 108;
-  const cAx = 190, cAy = 138;
-  const cBx = 280, cBy = 138;
-
+  const cAx = 190,
+    cAy = 138;
+  const cBx = 280,
+    cBy = 138;
   function renderRegion(items, cx, cy) {
     const lh = 21;
-    const startY = cy - ((items.length - 1) * lh) / 2;
-    return items.map((it, idx) => (
-      <text
-        key={(it.id || it) + idx}
-        x={cx}
-        y={startY + idx * lh + 5}
-        textAnchor="middle"
-        fontSize="14"
-        fontFamily={FONT_BODY}
-        fontWeight="800"
-        fill={INK}
-      >
-        {it.emoji ? `${it.emoji} ${it.label}` : it.label}
-      </text>
-    ));
+    const startY = cy - (items.length - 1) * lh / 2;
+    return items.map((it, idx) => /*#__PURE__*/React.createElement("text", {
+      key: (it.id || it) + idx,
+      x: cx,
+      y: startY + idx * lh + 5,
+      textAnchor: "middle",
+      fontSize: "14",
+      fontFamily: FONT_BODY,
+      fontWeight: "800",
+      fill: INK
+    }, it.emoji ? `${it.emoji} ${it.label}` : it.label));
   }
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxWidth: 400, display: "block", margin: "0 auto 10px" }}>
-      <circle cx={cAx} cy={cAy} r={r} fill={CORAL} fillOpacity="0.22" stroke={CORAL} strokeWidth="2.5" />
-      <circle cx={cBx} cy={cBy} r={r} fill={TEAL} fillOpacity="0.22" stroke={TEAL} strokeWidth="2.5" />
-      <text x={cAx - 75} y={cAy - 82} textAnchor="middle" fontFamily={FONT_HEAD} fontSize="22" fontWeight="700" fill={NAVY}>{labelA}</text>
-      <text x={cBx + 75} y={cBy - 82} textAnchor="middle" fontFamily={FONT_HEAD} fontSize="22" fontWeight="700" fill={NAVY}>{labelB}</text>
-      {renderRegion(onlyA, cAx - 52, cAy)}
-      {renderRegion(overlap, (cAx + cBx) / 2, cAy)}
-      {renderRegion(onlyB, cBx + 52, cBy)}
-    </svg>
-  );
+  return /*#__PURE__*/React.createElement("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    style: {
+      width: "100%",
+      maxWidth: 400,
+      display: "block",
+      margin: "0 auto 10px"
+    }
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: cAx,
+    cy: cAy,
+    r: r,
+    fill: CORAL,
+    fillOpacity: "0.22",
+    stroke: CORAL,
+    strokeWidth: "2.5"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: cBx,
+    cy: cBy,
+    r: r,
+    fill: TEAL,
+    fillOpacity: "0.22",
+    stroke: TEAL,
+    strokeWidth: "2.5"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: cAx - 75,
+    y: cAy - 82,
+    textAnchor: "middle",
+    fontFamily: FONT_HEAD,
+    fontSize: "22",
+    fontWeight: "700",
+    fill: NAVY
+  }, labelA), /*#__PURE__*/React.createElement("text", {
+    x: cBx + 75,
+    y: cBy - 82,
+    textAnchor: "middle",
+    fontFamily: FONT_HEAD,
+    fontSize: "22",
+    fontWeight: "700",
+    fill: NAVY
+  }, labelB), renderRegion(onlyA, cAx - 52, cAy), renderRegion(overlap, (cAx + cBx) / 2, cAy), renderRegion(onlyB, cBx + 52, cBy));
 }
 
 // Used only when A really is a subset of B: draws circle A fully nested inside circle B,
 // so the picture itself (not just the text) shows the subset relationship.
-function VennDiagramNested({ aItems, onlyBItems, labelA = "A", labelB = "B" }) {
-  const W = 460, H = 260;
-  const Bcx = 250, Bcy = 138, Br = 112;
-  const Acx = 185, Acy = 138, Ar = 52;
-
+function VennDiagramNested({
+  aItems,
+  onlyBItems,
+  labelA = "A",
+  labelB = "B"
+}) {
+  const W = 460,
+    H = 260;
+  const Bcx = 250,
+    Bcy = 138,
+    Br = 112;
+  const Acx = 185,
+    Acy = 138,
+    Ar = 52;
   function renderRegion(items, cx, cy) {
     const lh = 20;
-    const startY = cy - ((items.length - 1) * lh) / 2;
-    return items.map((it, idx) => (
-      <text
-        key={(it.id || it) + idx}
-        x={cx}
-        y={startY + idx * lh + 5}
-        textAnchor="middle"
-        fontSize="13"
-        fontFamily={FONT_BODY}
-        fontWeight="800"
-        fill={INK}
-      >
-        {it.emoji ? `${it.emoji} ${it.label}` : it.label}
-      </text>
-    ));
+    const startY = cy - (items.length - 1) * lh / 2;
+    return items.map((it, idx) => /*#__PURE__*/React.createElement("text", {
+      key: (it.id || it) + idx,
+      x: cx,
+      y: startY + idx * lh + 5,
+      textAnchor: "middle",
+      fontSize: "13",
+      fontFamily: FONT_BODY,
+      fontWeight: "800",
+      fill: INK
+    }, it.emoji ? `${it.emoji} ${it.label}` : it.label));
   }
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxWidth: 400, display: "block", margin: "0 auto 10px" }}>
-      <circle cx={Bcx} cy={Bcy} r={Br} fill={TEAL} fillOpacity="0.2" stroke={TEAL} strokeWidth="2.5" />
-      <circle cx={Acx} cy={Acy} r={Ar} fill={CORAL} fillOpacity="0.35" stroke={CORAL} strokeWidth="2.5" />
-      <text x={Acx} y={Acy - Ar - 12} textAnchor="middle" fontFamily={FONT_HEAD} fontSize="20" fontWeight="700" fill={NAVY}>{labelA}</text>
-      <text x={Bcx + Br - 18} y={Bcy - Br + 18} textAnchor="middle" fontFamily={FONT_HEAD} fontSize="20" fontWeight="700" fill={NAVY}>{labelB}</text>
-      {renderRegion(aItems, Acx, Acy)}
-      {renderRegion(onlyBItems, Bcx + 42, Bcy + 10)}
-    </svg>
-  );
+  return /*#__PURE__*/React.createElement("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    style: {
+      width: "100%",
+      maxWidth: 400,
+      display: "block",
+      margin: "0 auto 10px"
+    }
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: Bcx,
+    cy: Bcy,
+    r: Br,
+    fill: TEAL,
+    fillOpacity: "0.2",
+    stroke: TEAL,
+    strokeWidth: "2.5"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: Acx,
+    cy: Acy,
+    r: Ar,
+    fill: CORAL,
+    fillOpacity: "0.35",
+    stroke: CORAL,
+    strokeWidth: "2.5"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: Acx,
+    y: Acy - Ar - 12,
+    textAnchor: "middle",
+    fontFamily: FONT_HEAD,
+    fontSize: "20",
+    fontWeight: "700",
+    fill: NAVY
+  }, labelA), /*#__PURE__*/React.createElement("text", {
+    x: Bcx + Br - 18,
+    y: Bcy - Br + 18,
+    textAnchor: "middle",
+    fontFamily: FONT_HEAD,
+    fontSize: "20",
+    fontWeight: "700",
+    fill: NAVY
+  }, labelB), renderRegion(aItems, Acx, Acy), renderRegion(onlyBItems, Bcx + 42, Bcy + 10));
 }
-
-function QuestionCard({ q, onAnswer }) {
+function QuestionCard({
+  q,
+  onAnswer
+}) {
   const [selected, setSelected] = useState(null);
   const [numInput, setNumInput] = useState("");
   const [multiSel, setMultiSel] = useState([]);
   const [submitted, setSubmitted] = useState(false);
-
   function submitMembership(val) {
     if (submitted) return;
     setSelected(val);
     setSubmitted(true);
     setTimeout(() => onAnswer(val === q.correct), 900);
   }
-
   function submitCount() {
     if (submitted || numInput === "") return;
     setSubmitted(true);
     const correct = Number(numInput) === q.correct;
     setTimeout(() => onAnswer(correct), 900);
   }
-
   function toggleChip(id) {
     if (submitted) return;
-    setMultiSel((sel) => (sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id]));
+    setMultiSel(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
   }
-
   function submitSetop() {
     if (submitted) return;
     setSubmitted(true);
     const correct = sameSet(multiSel, q.correctIds);
     setTimeout(() => onAnswer(correct), 1100);
   }
-
   function submitSubset(val) {
     if (submitted) return;
     setSelected(val);
     setSubmitted(true);
     setTimeout(() => onAnswer(val === q.correct), 1000);
   }
-
   if (q.type === "membership") {
-    return (
-      <div>
-        <div style={{ fontFamily: FONT_HEAD, fontSize: 22, color: NAVY, marginBottom: 20, textAlign: "center" }}>
-          {q.letter} = {"{"}{q.setArr.join(", ")}{"}"}
-        </div>
-        <div style={{ fontSize: 26, textAlign: "center", marginBottom: 24, color: INK, fontFamily: FONT_HEAD }}>
-          {q.element} ⬜ {q.letter}
-        </div>
-        <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
-          {[
-            { val: true, label: `${q.element} ∈ ${q.letter}`, sub: "pripada" },
-            { val: false, label: `${q.element} ∉ ${q.letter}`, sub: "ne pripada" },
-          ].map((opt) => {
-            let bg = "#fff", border = "2px solid rgba(30,39,73,0.12)", color = NAVY;
-            if (submitted) {
-              if (opt.val === q.correct) { bg = "rgba(47,191,160,0.15)"; border = `2px solid ${TEAL}`; }
-              else if (opt.val === selected) { bg = "rgba(255,107,91,0.15)"; border = `2px solid ${CORAL}`; }
-            }
-            return (
-              <button
-                key={String(opt.val)}
-                onClick={() => submitMembership(opt.val)}
-                disabled={submitted}
-                style={{
-                  padding: "18px 26px", borderRadius: 16, background: bg, border, cursor: submitted ? "default" : "pointer",
-                  fontFamily: FONT_HEAD, fontWeight: 700, fontSize: 18, color, minWidth: 150,
-                }}
-              >
-                {opt.label}
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#9CA3AF", marginTop: 4 }}>{opt.sub}</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: FONT_HEAD,
+        fontSize: 22,
+        color: NAVY,
+        marginBottom: 20,
+        textAlign: "center"
+      }
+    }, q.letter, " = ", "{", q.setArr.join(", "), "}"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 26,
+        textAlign: "center",
+        marginBottom: 24,
+        color: INK,
+        fontFamily: FONT_HEAD
+      }
+    }, q.element, " \u2B1C ", q.letter), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 14,
+        justifyContent: "center"
+      }
+    }, [{
+      val: true,
+      label: `${q.element} ∈ ${q.letter}`,
+      sub: "pripada"
+    }, {
+      val: false,
+      label: `${q.element} ∉ ${q.letter}`,
+      sub: "ne pripada"
+    }].map(opt => {
+      let bg = "#fff",
+        border = "2px solid rgba(30,39,73,0.12)",
+        color = NAVY;
+      if (submitted) {
+        if (opt.val === q.correct) {
+          bg = "rgba(47,191,160,0.15)";
+          border = `2px solid ${TEAL}`;
+        } else if (opt.val === selected) {
+          bg = "rgba(255,107,91,0.15)";
+          border = `2px solid ${CORAL}`;
+        }
+      }
+      return /*#__PURE__*/React.createElement("button", {
+        key: String(opt.val),
+        onClick: () => submitMembership(opt.val),
+        disabled: submitted,
+        style: {
+          padding: "18px 26px",
+          borderRadius: 16,
+          background: bg,
+          border,
+          cursor: submitted ? "default" : "pointer",
+          fontFamily: FONT_HEAD,
+          fontWeight: 700,
+          fontSize: 18,
+          color,
+          minWidth: 150
+        }
+      }, opt.label, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          fontWeight: 600,
+          color: "#9CA3AF",
+          marginTop: 4
+        }
+      }, opt.sub));
+    })));
   }
-
   if (q.type === "count") {
-    return (
-      <div>
-        <div style={{ fontFamily: FONT_HEAD, fontSize: 20, color: NAVY, marginBottom: 6, textAlign: "center" }}>
-          {q.letter} = {"{"}{q.display.join(", ")}{"}"}
-        </div>
-        {q.note && (
-          <div style={{ textAlign: "center", color: YELLOW, fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
-            💡 {q.note}
-          </div>
-        )}
-        <div style={{ fontSize: 18, textAlign: "center", margin: "18px 0", fontFamily: FONT_HEAD, color: INK }}>
-          Koliko elemenata ima skup {q.letter}?
-        </div>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", alignItems: "center" }}>
-          <input
-            type="number"
-            value={numInput}
-            onChange={(e) => setNumInput(e.target.value)}
-            disabled={submitted}
-            style={{ ...inputStyle, width: 100, textAlign: "center", fontSize: 20, fontFamily: FONT_HEAD, marginBottom: 0,
-              borderColor: submitted ? (Number(numInput) === q.correct ? TEAL : CORAL) : "rgba(30,39,73,0.12)" }}
-            autoFocus
-          />
-          <Button variant="coral" onClick={submitCount} disabled={submitted || numInput === ""}>
-            Provjeri
-          </Button>
-        </div>
-        {submitted && Number(numInput) !== q.correct && (
-          <div style={{ textAlign: "center", marginTop: 12, color: CORAL, fontWeight: 700 }}>
-            Točan odgovor: {q.correct}
-          </div>
-        )}
-      </div>
-    );
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: FONT_HEAD,
+        fontSize: 20,
+        color: NAVY,
+        marginBottom: 6,
+        textAlign: "center"
+      }
+    }, q.letter, " = ", "{", q.display.join(", "), "}"), q.note && /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        color: YELLOW,
+        fontSize: 13,
+        fontWeight: 700,
+        marginBottom: 14
+      }
+    }, "\uD83D\uDCA1 ", q.note), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 18,
+        textAlign: "center",
+        margin: "18px 0",
+        fontFamily: FONT_HEAD,
+        color: INK
+      }
+    }, "Koliko elemenata ima skup ", q.letter, "?"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 12,
+        justifyContent: "center",
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      value: numInput,
+      onChange: e => setNumInput(e.target.value),
+      disabled: submitted,
+      style: {
+        ...inputStyle,
+        width: 100,
+        textAlign: "center",
+        fontSize: 20,
+        fontFamily: FONT_HEAD,
+        marginBottom: 0,
+        borderColor: submitted ? Number(numInput) === q.correct ? TEAL : CORAL : "rgba(30,39,73,0.12)"
+      },
+      autoFocus: true
+    }), /*#__PURE__*/React.createElement(Button, {
+      variant: "coral",
+      onClick: submitCount,
+      disabled: submitted || numInput === ""
+    }, "Provjeri")), submitted && Number(numInput) !== q.correct && /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        marginTop: 12,
+        color: CORAL,
+        fontWeight: 700
+      }
+    }, "To\u010Dan odgovor: ", q.correct));
   }
-
   if (q.type === "setop") {
-    return (
-      <div>
-        {q.displayStyle === "venn" ? (
-          <VennDiagram onlyA={q.onlyA} overlap={q.overlap} onlyB={q.onlyB} />
-        ) : (
-          <div style={{ display: "flex", gap: 24, justifyContent: "center", marginBottom: 14, flexWrap: "wrap" }}>
-            <div style={{ fontFamily: FONT_HEAD, color: NAVY, fontSize: 16 }}>
-              A = {"{"}{renderSetInline(q.setA)}{"}"}
-            </div>
-            <div style={{ fontFamily: FONT_HEAD, color: NAVY, fontSize: 16 }}>
-              B = {"{"}{renderSetInline(q.setB)}{"}"}
-            </div>
-          </div>
-        )}
-        <div style={{ textAlign: "center", fontWeight: 700, color: INK, marginBottom: 16, fontSize: 15 }}>
-          {q.question}
-        </div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginBottom: 18 }}>
-          {q.options.map((opt) => {
-            const isSel = multiSel.includes(opt.id);
-            const isEmptyOpt = opt.id === EMPTY_OPTION.id;
-            let bg = isSel ? "rgba(30,39,73,0.08)" : "#fff";
-            let border = isSel ? `2px solid ${NAVY}` : `2px ${isEmptyOpt ? "dashed" : "solid"} rgba(30,39,73,0.22)`;
-            if (submitted) {
-              const shouldBe = q.correctIds.includes(opt.id);
-              if (shouldBe) { bg = "rgba(47,191,160,0.15)"; border = `2px solid ${TEAL}`; }
-              else if (isSel) { bg = "rgba(255,107,91,0.15)"; border = `2px solid ${CORAL}`; }
-            }
-            return (
-              <button
-                key={opt.id}
-                onClick={() => toggleChip(opt.id)}
-                disabled={submitted}
-                style={{
-                  padding: "10px 16px", borderRadius: 999, background: bg, border,
-                  cursor: submitted ? "default" : "pointer", fontFamily: FONT_BODY, fontWeight: 700, fontSize: 15,
-                  color: INK, fontStyle: isEmptyOpt ? "italic" : "normal",
-                }}
-              >
-                {opt.emoji ? `${opt.emoji} ${opt.label}` : opt.label}
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <Button variant="coral" onClick={submitSetop} disabled={submitted || multiSel.length === 0}>
-            Provjeri odgovor
-          </Button>
-        </div>
-        {submitted && !sameSet(multiSel, q.correctIds) && (
-          <div style={{ textAlign: "center", marginTop: 14, color: "#6B7280", fontSize: 13 }}>
-            {q.mode === "unija"
-              ? `Unija A ∪ B sadrži sve elemente koji se nalaze u A ili u B (ili u oba): ${renderSetInline(q.options.filter((o) => q.correctIds.includes(o.id)))}.`
-              : `Presjek A ∩ B sadrži samo elemente koji se nalaze i u A i u B istovremeno: ${renderSetInline(q.options.filter((o) => q.correctIds.includes(o.id)))}.`}
-          </div>
-        )}
-      </div>
-    );
+    return /*#__PURE__*/React.createElement("div", null, q.displayStyle === "venn" ? /*#__PURE__*/React.createElement(VennDiagram, {
+      onlyA: q.onlyA,
+      overlap: q.overlap,
+      onlyB: q.onlyB
+    }) : /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 24,
+        justifyContent: "center",
+        marginBottom: 14,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: FONT_HEAD,
+        color: NAVY,
+        fontSize: 16
+      }
+    }, "A = ", "{", renderSetInline(q.setA), "}"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: FONT_HEAD,
+        color: NAVY,
+        fontSize: 16
+      }
+    }, "B = ", "{", renderSetInline(q.setB), "}")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        fontWeight: 700,
+        color: INK,
+        marginBottom: 16,
+        fontSize: 15
+      }
+    }, q.question), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10,
+        flexWrap: "wrap",
+        justifyContent: "center",
+        marginBottom: 18
+      }
+    }, q.options.map(opt => {
+      const isSel = multiSel.includes(opt.id);
+      const isEmptyOpt = opt.id === EMPTY_OPTION.id;
+      let bg = isSel ? "rgba(30,39,73,0.08)" : "#fff";
+      let border = isSel ? `2px solid ${NAVY}` : `2px ${isEmptyOpt ? "dashed" : "solid"} rgba(30,39,73,0.22)`;
+      if (submitted) {
+        const shouldBe = q.correctIds.includes(opt.id);
+        if (shouldBe) {
+          bg = "rgba(47,191,160,0.15)";
+          border = `2px solid ${TEAL}`;
+        } else if (isSel) {
+          bg = "rgba(255,107,91,0.15)";
+          border = `2px solid ${CORAL}`;
+        }
+      }
+      return /*#__PURE__*/React.createElement("button", {
+        key: opt.id,
+        onClick: () => toggleChip(opt.id),
+        disabled: submitted,
+        style: {
+          padding: "10px 16px",
+          borderRadius: 999,
+          background: bg,
+          border,
+          cursor: submitted ? "default" : "pointer",
+          fontFamily: FONT_BODY,
+          fontWeight: 700,
+          fontSize: 15,
+          color: INK,
+          fontStyle: isEmptyOpt ? "italic" : "normal"
+        }
+      }, opt.emoji ? `${opt.emoji} ${opt.label}` : opt.label);
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center"
+      }
+    }, /*#__PURE__*/React.createElement(Button, {
+      variant: "coral",
+      onClick: submitSetop,
+      disabled: submitted || multiSel.length === 0
+    }, "Provjeri odgovor")), submitted && !sameSet(multiSel, q.correctIds) && /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        marginTop: 14,
+        color: "#6B7280",
+        fontSize: 13
+      }
+    }, q.mode === "unija" ? `Unija A ∪ B sadrži sve elemente koji se nalaze u A ili u B (ili u oba): ${renderSetInline(q.options.filter(o => q.correctIds.includes(o.id)))}.` : `Presjek A ∩ B sadrži samo elemente koji se nalaze i u A i u B istovremeno: ${renderSetInline(q.options.filter(o => q.correctIds.includes(o.id)))}.`));
   }
-
   if (q.type === "subset") {
-    return (
-      <div>
-        {q.displayStyle === "venn" ? (
-          q.correct ? (
-            <VennDiagramNested aItems={q.overlap} onlyBItems={q.onlyB} />
-          ) : (
-            <VennDiagram onlyA={q.onlyA} overlap={q.overlap} onlyB={q.onlyB} />
-          )
-        ) : (
-          <div style={{ display: "flex", gap: 24, justifyContent: "center", marginBottom: 14, flexWrap: "wrap" }}>
-            <div style={{ fontFamily: FONT_HEAD, color: NAVY, fontSize: 16 }}>
-              A = {"{"}{renderSetInline(q.setA)}{"}"}
-            </div>
-            <div style={{ fontFamily: FONT_HEAD, color: NAVY, fontSize: 16 }}>
-              B = {"{"}{renderSetInline(q.setB)}{"}"}
-            </div>
-          </div>
-        )}
-        <div style={{ fontSize: 20, textAlign: "center", margin: "16px 0", fontFamily: FONT_HEAD, color: INK }}>
-          Je li A podskup skupa B?
-        </div>
-        <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
-          {[
-            { val: true, label: "DA, A ⊆ B" },
-            { val: false, label: "NE, A ⊄ B" },
-          ].map((opt) => {
-            let bg = "#fff", border = "2px solid rgba(30,39,73,0.12)", color = NAVY;
-            if (submitted) {
-              if (opt.val === q.correct) { bg = "rgba(47,191,160,0.15)"; border = `2px solid ${TEAL}`; }
-              else if (opt.val === selected) { bg = "rgba(255,107,91,0.15)"; border = `2px solid ${CORAL}`; }
-            }
-            return (
-              <button
-                key={String(opt.val)}
-                onClick={() => submitSubset(opt.val)}
-                disabled={submitted}
-                style={{
-                  padding: "18px 26px", borderRadius: 16, background: bg, border, cursor: submitted ? "default" : "pointer",
-                  fontFamily: FONT_HEAD, fontWeight: 700, fontSize: 17, color, minWidth: 150,
-                }}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-        {submitted && (
-          <div style={{ textAlign: "center", marginTop: 14, color: "#6B7280", fontSize: 13 }}>
-            {q.correct
-              ? "Svi elementi skupa A nalaze se i u skupu B, pa je A podskup od B."
-              : "Barem jedan element skupa A ne nalazi se u skupu B, pa A nije podskup od B."}
-          </div>
-        )}
-      </div>
-    );
+    return /*#__PURE__*/React.createElement("div", null, q.displayStyle === "venn" ? q.correct ? /*#__PURE__*/React.createElement(VennDiagramNested, {
+      aItems: q.overlap,
+      onlyBItems: q.onlyB
+    }) : /*#__PURE__*/React.createElement(VennDiagram, {
+      onlyA: q.onlyA,
+      overlap: q.overlap,
+      onlyB: q.onlyB
+    }) : /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 24,
+        justifyContent: "center",
+        marginBottom: 14,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: FONT_HEAD,
+        color: NAVY,
+        fontSize: 16
+      }
+    }, "A = ", "{", renderSetInline(q.setA), "}"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: FONT_HEAD,
+        color: NAVY,
+        fontSize: 16
+      }
+    }, "B = ", "{", renderSetInline(q.setB), "}")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 20,
+        textAlign: "center",
+        margin: "16px 0",
+        fontFamily: FONT_HEAD,
+        color: INK
+      }
+    }, "Je li A podskup skupa B?"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 14,
+        justifyContent: "center"
+      }
+    }, [{
+      val: true,
+      label: "DA, A ⊆ B"
+    }, {
+      val: false,
+      label: "NE, A ⊄ B"
+    }].map(opt => {
+      let bg = "#fff",
+        border = "2px solid rgba(30,39,73,0.12)",
+        color = NAVY;
+      if (submitted) {
+        if (opt.val === q.correct) {
+          bg = "rgba(47,191,160,0.15)";
+          border = `2px solid ${TEAL}`;
+        } else if (opt.val === selected) {
+          bg = "rgba(255,107,91,0.15)";
+          border = `2px solid ${CORAL}`;
+        }
+      }
+      return /*#__PURE__*/React.createElement("button", {
+        key: String(opt.val),
+        onClick: () => submitSubset(opt.val),
+        disabled: submitted,
+        style: {
+          padding: "18px 26px",
+          borderRadius: 16,
+          background: bg,
+          border,
+          cursor: submitted ? "default" : "pointer",
+          fontFamily: FONT_HEAD,
+          fontWeight: 700,
+          fontSize: 17,
+          color,
+          minWidth: 150
+        }
+      }, opt.label);
+    })), submitted && /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        marginTop: 14,
+        color: "#6B7280",
+        fontSize: 13
+      }
+    }, q.correct ? "Svi elementi skupa A nalaze se i u skupu B, pa je A podskup od B." : "Barem jedan element skupa A ne nalazi se u skupu B, pa A nije podskup od B."));
   }
-
   return null;
 }
-
-function PlayGame({ user, game, bank, onFinish, onExit }) {
+function PlayGame({
+  user,
+  game,
+  bank,
+  onFinish,
+  onExit
+}) {
   const questions = useMemo(() => generateQuestions(game.id, bank), [game.id]);
   const [index, setIndex] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const startRef = useRef(Date.now());
-
   function handleAnswer(isCorrect) {
-    if (isCorrect) setCorrectCount((c) => c + 1);
+    if (isCorrect) setCorrectCount(c => c + 1);
     if (index + 1 < questions.length) {
-      setIndex((i) => i + 1);
+      setIndex(i => i + 1);
     } else {
       const durationSec = Math.round((Date.now() - startRef.current) / 1000);
       onFinish({
         score: correctCount + (isCorrect ? 1 : 0),
         maxScore: questions.length,
-        durationSec,
+        durationSec
       });
     }
   }
-
   function handleExit() {
     const unanswered = questions.length - index; // includes the current, unanswered question
     if (unanswered > 0) {
-      const ok = window.confirm(
-        `Još nisi odgovorio/la na ${unanswered} ${unanswered === 1 ? "pitanje" : "pitanja"}. Ako sad izađeš, ${unanswered === 1 ? "ono" : "ona"} će se računati kao netočno. Izaći?`
-      );
+      const ok = window.confirm(`Još nisi odgovorio/la na ${unanswered} ${unanswered === 1 ? "pitanje" : "pitanja"}. Ako sad izađeš, ${unanswered === 1 ? "ono" : "ona"} će se računati kao netočno. Izaći?`);
       if (!ok) return;
       const durationSec = Math.round((Date.now() - startRef.current) / 1000);
       onFinish({
         score: correctCount,
         maxScore: questions.length,
-        durationSec,
+        durationSec
       });
       return;
     }
     onExit();
   }
-
   const q = questions[index];
-
-  return (
-    <div style={{ minHeight: "100vh", background: CREAM, fontFamily: FONT_BODY, display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px", background: "#fff", boxShadow: "0 2px 10px rgba(30,39,73,0.05)" }}>
-        <button onClick={handleExit} style={{ border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: NAVY, fontFamily: FONT_HEAD, fontWeight: 700 }}>
-          <ArrowLeft size={18} /> Odustani
-        </button>
-        <div style={{ fontFamily: FONT_HEAD, fontWeight: 700, color: NAVY }}>{game.name}</div>
-        <div style={{ width: 90, textAlign: "right", color: "#9CA3AF", fontSize: 13, fontWeight: 700 }}>
-          {index + 1} / {questions.length}
-        </div>
-      </div>
-
-      <div style={{ padding: "0 24px" }}>
-        <div style={{ height: 8, background: "rgba(30,39,73,0.08)", borderRadius: 99, marginTop: 18, maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
-          <div style={{ height: "100%", width: `${((index) / questions.length) * 100}%`, background: game.color, borderRadius: 99, transition: "width 0.3s" }} />
-        </div>
-      </div>
-
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <Card style={{ width: "100%", maxWidth: 640, padding: 36 }}>
-          {q && <QuestionCard key={index} q={q} onAnswer={handleAnswer} />}
-        </Card>
-      </div>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: CREAM,
+      fontFamily: FONT_BODY,
+      display: "flex",
+      flexDirection: "column"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "16px 24px",
+      background: "#fff",
+      boxShadow: "0 2px 10px rgba(30,39,73,0.05)"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: handleExit,
+    style: {
+      border: "none",
+      background: "none",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      color: NAVY,
+      fontFamily: FONT_HEAD,
+      fontWeight: 700
+    }
+  }, /*#__PURE__*/React.createElement(ArrowLeft, {
+    size: 18
+  }), " Odustani"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: FONT_HEAD,
+      fontWeight: 700,
+      color: NAVY
+    }
+  }, game.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 90,
+      textAlign: "right",
+      color: "#9CA3AF",
+      fontSize: 13,
+      fontWeight: 700
+    }
+  }, index + 1, " / ", questions.length)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "0 24px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 8,
+      background: "rgba(30,39,73,0.08)",
+      borderRadius: 99,
+      marginTop: 18,
+      maxWidth: 640,
+      marginLeft: "auto",
+      marginRight: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      width: `${index / questions.length * 100}%`,
+      background: game.color,
+      borderRadius: 99,
+      transition: "width 0.3s"
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    style: {
+      width: "100%",
+      maxWidth: 640,
+      padding: 36
+    }
+  }, q && /*#__PURE__*/React.createElement(QuestionCard, {
+    key: index,
+    q: q,
+    onAnswer: handleAnswer
+  }))));
 }
-
-function ResultsScreen({ user, game, result, onReplay, onBack }) {
-  const pct = Math.round((result.score / result.maxScore) * 100);
+function ResultsScreen({
+  user,
+  game,
+  result,
+  onReplay,
+  onBack
+}) {
+  const pct = Math.round(result.score / result.maxScore * 100);
   const msg = pct >= 80 ? "Sjajno! 🎉" : pct >= 50 ? "Dobar posao! 💪" : "Vježbaj još malo 🌱";
-  return (
-    <div style={{ minHeight: "100vh", background: CREAM, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: FONT_BODY }}>
-      <Card style={{ maxWidth: 460, width: "100%", textAlign: "center", padding: 40 }}>
-        <div style={{ fontSize: 46, marginBottom: 6 }}>{pct >= 80 ? "🏆" : pct >= 50 ? "🎯" : "🌱"}</div>
-        <h2 style={{ fontFamily: FONT_HEAD, color: NAVY, fontSize: 24, margin: "0 0 4px" }}>{msg}</h2>
-        <p style={{ color: "#6B7280", marginTop: 0 }}>{game.name}</p>
-        <div style={{ fontFamily: FONT_HEAD, fontSize: 46, color: game.color, margin: "14px 0" }}>
-          {result.score}/{result.maxScore}
-        </div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 24, color: "#6B7280", fontSize: 14, marginBottom: 24 }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Trophy size={16} /> {pct}% točno</span>
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Clock size={16} /> {result.durationSec}s</span>
-        </div>
-        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <Button variant="ghost" onClick={onBack}>Natrag na igre</Button>
-          <Button variant="coral" onClick={onReplay}><RefreshCw size={16} /> Igraj ponovno</Button>
-        </div>
-      </Card>
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: CREAM,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+      fontFamily: FONT_BODY
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    style: {
+      maxWidth: 460,
+      width: "100%",
+      textAlign: "center",
+      padding: 40
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 46,
+      marginBottom: 6
+    }
+  }, pct >= 80 ? "🏆" : pct >= 50 ? "🎯" : "🌱"), /*#__PURE__*/React.createElement("h2", {
+    style: {
+      fontFamily: FONT_HEAD,
+      color: NAVY,
+      fontSize: 24,
+      margin: "0 0 4px"
+    }
+  }, msg), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "#6B7280",
+      marginTop: 0
+    }
+  }, game.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: FONT_HEAD,
+      fontSize: 46,
+      color: game.color,
+      margin: "14px 0"
+    }
+  }, result.score, "/", result.maxScore), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "center",
+      gap: 24,
+      color: "#6B7280",
+      fontSize: 14,
+      marginBottom: 24
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement(Trophy, {
+    size: 16
+  }), " ", pct, "% to\u010Dno"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement(Clock, {
+    size: 16
+  }), " ", result.durationSec, "s")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      justifyContent: "center"
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "ghost",
+    onClick: onBack
+  }, "Natrag na igre"), /*#__PURE__*/React.createElement(Button, {
+    variant: "coral",
+    onClick: onReplay
+  }, /*#__PURE__*/React.createElement(RefreshCw, {
+    size: 16
+  }), " Igraj ponovno"))));
 }
 
 /* ============================================================
@@ -2502,31 +3502,66 @@ function ResultsScreen({ user, game, result, onReplay, onBack }) {
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { error: null };
+    this.state = {
+      error: null
+    };
   }
   static getDerivedStateFromError(error) {
-    return { error };
+    return {
+      error
+    };
   }
   componentDidCatch(error, info) {
     console.error("Skupko error:", error, info);
   }
   render() {
     if (this.state.error) {
-      return (
-        <div style={{ minHeight: "100vh", background: CREAM, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: FONT_BODY }}>
-          <div style={{ maxWidth: 480, textAlign: "center" }}>
-            <div style={{ fontSize: 36, marginBottom: 10 }}>⚠️</div>
-            <h2 style={{ fontFamily: FONT_HEAD, color: NAVY }}>Nešto je pošlo po zlu</h2>
-            <p style={{ color: "#6B7280", fontSize: 14 }}>{String(this.state.error.message || this.state.error)}</p>
-            <button
-              onClick={() => this.setState({ error: null })}
-              style={{ marginTop: 12, padding: "10px 18px", borderRadius: 12, border: "none", background: NAVY, color: "#fff", fontFamily: FONT_HEAD, fontWeight: 700, cursor: "pointer" }}
-            >
-              Pokušaj ponovno
-            </button>
-          </div>
-        </div>
-      );
+      return /*#__PURE__*/React.createElement("div", {
+        style: {
+          minHeight: "100vh",
+          background: CREAM,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+          fontFamily: FONT_BODY
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          maxWidth: 480,
+          textAlign: "center"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 36,
+          marginBottom: 10
+        }
+      }, "\u26A0\uFE0F"), /*#__PURE__*/React.createElement("h2", {
+        style: {
+          fontFamily: FONT_HEAD,
+          color: NAVY
+        }
+      }, "Ne\u0161to je po\u0161lo po zlu"), /*#__PURE__*/React.createElement("p", {
+        style: {
+          color: "#6B7280",
+          fontSize: 14
+        }
+      }, String(this.state.error.message || this.state.error)), /*#__PURE__*/React.createElement("button", {
+        onClick: () => this.setState({
+          error: null
+        }),
+        style: {
+          marginTop: 12,
+          padding: "10px 18px",
+          borderRadius: 12,
+          border: "none",
+          background: NAVY,
+          color: "#fff",
+          fontFamily: FONT_HEAD,
+          fontWeight: 700,
+          cursor: "pointer"
+        }
+      }, "Poku\u0161aj ponovno")));
     }
     return this.props.children;
   }
@@ -2543,9 +3578,10 @@ function AppInner() {
   const [bank, setBank] = useState(null);
   const [defaultBank, setDefaultBank] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-  const [studentScreen, setStudentScreen] = useState({ view: "menu" }); // menu | play | results
+  const [studentScreen, setStudentScreen] = useState({
+    view: "menu"
+  }); // menu | play | results
   const [syncError, setSyncError] = useState(false);
-
   useEffect(() => {
     (async () => {
       let u = await loadUsers();
@@ -2587,63 +3623,69 @@ function AppInner() {
       setSyncError(true);
     }
   }
-
   useEffect(() => {
     if (!ready || !currentUser || currentUser.role !== "teacher") return;
     const id = setInterval(refreshData, 8000);
     return () => clearInterval(id);
   }, [ready, currentUser]);
-
   async function handleAddUsers(newRows) {
-    const map = new Map(users.map((u) => [u.username.toLowerCase(), u]));
-    newRows.forEach((r) => {
+    const map = new Map(users.map(u => [u.username.toLowerCase(), u]));
+    newRows.forEach(r => {
       map.set(r.username.toLowerCase(), {
         username: r.username,
         password: r.password,
         ime: r.ime,
         prezime: r.prezime,
-        role: "student",
+        role: "student"
       });
     });
     const updated = Array.from(map.values());
     setUsers(updated);
     await saveUsers(updated);
   }
-
   async function handleDeleteUser(username) {
     if (!window.confirm("Ukloniti ovog učenika iz popisa? Njegovi pokušaji ostat će zabilježeni.")) return;
-    const updated = users.filter((u) => u.username !== username);
+    const updated = users.filter(u => u.username !== username);
     setUsers(updated);
     await saveUsers(updated);
   }
-
   async function handleAddQuestion(gameId, question) {
-    const updated = { ...bank, [gameId]: [...bank[gameId], question] };
-    setBank(updated);
-    await saveBank(updated);
-  }
-
-  async function handleUpdateQuestion(gameId, qid, question) {
     const updated = {
       ...bank,
-      [gameId]: bank[gameId].map((q) => (q.qid === qid ? { ...question, qid } : q)),
+      [gameId]: [...bank[gameId], question]
     };
     setBank(updated);
     await saveBank(updated);
   }
-
+  async function handleUpdateQuestion(gameId, qid, question) {
+    const updated = {
+      ...bank,
+      [gameId]: bank[gameId].map(q => q.qid === qid ? {
+        ...question,
+        qid
+      } : q)
+    };
+    setBank(updated);
+    await saveBank(updated);
+  }
   async function handleDeleteQuestion(gameId, qid) {
-    const updated = { ...bank, [gameId]: bank[gameId].filter((q) => q.qid !== qid) };
+    const updated = {
+      ...bank,
+      [gameId]: bank[gameId].filter(q => q.qid !== qid)
+    };
     setBank(updated);
     await saveBank(updated);
   }
-
   async function handleResetBank(gameId) {
-    const updated = { ...bank, [gameId]: defaultBank[gameId].map((q) => ({ ...q })) };
+    const updated = {
+      ...bank,
+      [gameId]: defaultBank[gameId].map(q => ({
+        ...q
+      }))
+    };
     setBank(updated);
     await saveBank(updated);
   }
-
   async function handleFinishGame(gameId, result) {
     const attempt = {
       id: uid(),
@@ -2652,114 +3694,116 @@ function AppInner() {
       score: result.score,
       maxScore: result.maxScore,
       durationSec: result.durationSec,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     };
-    setAttempts((prev) => [...prev, attempt]);
+    setAttempts(prev => [...prev, attempt]);
     await addAttemptRemote(attempt);
-    setStudentScreen({ view: "results", gameId, result });
+    setStudentScreen({
+      view: "results",
+      gameId,
+      result
+    });
   }
-
   function handleLogout() {
     setCurrentUser(null);
-    setStudentScreen({ view: "menu" });
+    setStudentScreen({
+      view: "menu"
+    });
   }
-
   if (!ready) {
-    return (
-      <div style={{ minHeight: "100vh", background: CREAM, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT_BODY }}>
-        <div style={{ textAlign: "center" }}>
-          <Logo size={44} />
-          <div style={{ marginTop: 16, color: "#9CA3AF" }}>Učitavanje…</div>
-        </div>
-      </div>
-    );
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        minHeight: "100vh",
+        background: CREAM,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: FONT_BODY
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center"
+      }
+    }, /*#__PURE__*/React.createElement(Logo, {
+      size: 44
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 16,
+        color: "#9CA3AF"
+      }
+    }, "U\u010Ditavanje\u2026")));
   }
-
-  const fontImport = (
-    <style>{`
+  const fontImport = /*#__PURE__*/React.createElement("style", null, `
       @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap');
       * { box-sizing: border-box; }
       body { margin: 0; }
       code { background: rgba(30,39,73,0.06); padding: 2px 6px; border-radius: 6px; font-size: 13px; }
-    `}</style>
-  );
-
+    `);
   if (!currentUser) {
-    return (
-      <>
-        {fontImport}
-        <LoginScreen users={users} onLogin={setCurrentUser} />
-      </>
-    );
+    return /*#__PURE__*/React.createElement(React.Fragment, null, fontImport, /*#__PURE__*/React.createElement(LoginScreen, {
+      users: users,
+      onLogin: setCurrentUser
+    }));
   }
-
   if (currentUser.role === "teacher") {
-    return (
-      <>
-        {fontImport}
-        <TeacherDashboard
-          user={currentUser}
-          users={users}
-          attempts={attempts}
-          bank={bank}
-          onAddUsers={handleAddUsers}
-          onDeleteUser={handleDeleteUser}
-          onAddQuestion={handleAddQuestion}
-          onUpdateQuestion={handleUpdateQuestion}
-          onDeleteQuestion={handleDeleteQuestion}
-          onResetBank={handleResetBank}
-          onLogout={handleLogout}
-          onRefresh={refreshData}
-          syncError={syncError}
-        />
-      </>
-    );
+    return /*#__PURE__*/React.createElement(React.Fragment, null, fontImport, /*#__PURE__*/React.createElement(TeacherDashboard, {
+      user: currentUser,
+      users: users,
+      attempts: attempts,
+      bank: bank,
+      onAddUsers: handleAddUsers,
+      onDeleteUser: handleDeleteUser,
+      onAddQuestion: handleAddQuestion,
+      onUpdateQuestion: handleUpdateQuestion,
+      onDeleteQuestion: handleDeleteQuestion,
+      onResetBank: handleResetBank,
+      onLogout: handleLogout,
+      onRefresh: refreshData,
+      syncError: syncError
+    }));
   }
 
   // student
-  return (
-    <>
-      {fontImport}
-      {studentScreen.view === "menu" && (
-        <GameMenu
-          user={currentUser}
-          attempts={attempts}
-          onPick={(gameId) => setStudentScreen({ view: "play", gameId })}
-          onLogout={handleLogout}
-        />
-      )}
-      {studentScreen.view === "play" && (
-        <PlayGame
-          user={currentUser}
-          game={GAMES.find((g) => g.id === studentScreen.gameId)}
-          bank={bank}
-          onFinish={(result) => handleFinishGame(studentScreen.gameId, result)}
-          onExit={() => setStudentScreen({ view: "menu" })}
-        />
-      )}
-      {studentScreen.view === "results" && (
-        <ResultsScreen
-          user={currentUser}
-          game={GAMES.find((g) => g.id === studentScreen.gameId)}
-          result={studentScreen.result}
-          onReplay={() => setStudentScreen({ view: "play", gameId: studentScreen.gameId })}
-          onBack={() => setStudentScreen({ view: "menu" })}
-        />
-      )}
-    </>
-  );
+  return /*#__PURE__*/React.createElement(React.Fragment, null, fontImport, studentScreen.view === "menu" && /*#__PURE__*/React.createElement(GameMenu, {
+    user: currentUser,
+    attempts: attempts,
+    onPick: gameId => setStudentScreen({
+      view: "play",
+      gameId
+    }),
+    onLogout: handleLogout
+  }), studentScreen.view === "play" && /*#__PURE__*/React.createElement(PlayGame, {
+    user: currentUser,
+    game: GAMES.find(g => g.id === studentScreen.gameId),
+    bank: bank,
+    onFinish: result => handleFinishGame(studentScreen.gameId, result),
+    onExit: () => setStudentScreen({
+      view: "menu"
+    })
+  }), studentScreen.view === "results" && /*#__PURE__*/React.createElement(ResultsScreen, {
+    user: currentUser,
+    game: GAMES.find(g => g.id === studentScreen.gameId),
+    result: studentScreen.result,
+    onReplay: () => setStudentScreen({
+      view: "play",
+      gameId: studentScreen.gameId
+    }),
+    onBack: () => setStudentScreen({
+      view: "menu"
+    })
+  }));
 }
-
 function App() {
-  return (
-    <ErrorBoundary>
-      <AppInner />
-    </ErrorBoundary>
-  );
+  return /*#__PURE__*/React.createElement(ErrorBoundary, null, /*#__PURE__*/React.createElement(AppInner, null));
 }
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
+  document.getElementById('fallback').style.display = 'none';
+} catch (err) {
+  document.getElementById('fallback').querySelector('h2').textContent = 'Greska pri pokretanju aplikacije';
+  document.getElementById('fallback-msg').textContent = String(err && err.message ? err.message : err);
+  console.error(err);
+}
+}
 </script>
 </body>
 </html>
