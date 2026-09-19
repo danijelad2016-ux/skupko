@@ -704,11 +704,8 @@ function describeQuestion(q) {
   return "Zadatak";
 }
 
-/* ---------------- storage layer (Google Sheets via Apps Script) ---------------- */
+/* ---------------- storage layer ---------------- */
 
-// Paste your own deployed Apps Script Web App URL here (ends in /exec).
-// Every device that loads this page talks to the same URL, which is what
-// makes the teacher's and students' data shared across computers.
 const API_URL = "https://script.google.com/macros/s/AKfycby7zYVRGNcEfqlxP6W32TPajLkA1dZVO1fQA_ug2hZTfeZxUO6v-zfnVwR_Wr8p6g4r/exec";
 async function apiGet(action) {
   const res = await fetch(`${API_URL}?action=${action}&_=${Date.now()}`);
@@ -1748,7 +1745,8 @@ function ProgressPanel({
   setSelectedUsername
 }) {
   const student = students.find(s => s.username === selectedUsername);
-  const mine = attempts.filter(a => a.username === selectedUsername);
+  const validSelection = selectedUsername && student;
+  const mine = validSelection ? attempts.filter(a => a.username === selectedUsername) : [];
   const perGame = GAMES.map(g => {
     const gAttempts = mine.filter(a => a.game === g.id);
     const pct = a => Math.round(a.score / a.maxScore * 100);
@@ -1767,7 +1765,7 @@ function ProgressPanel({
     name: g.short,
     prosjek: g.avg
   }));
-  if (!selectedUsername) {
+  if (!validSelection) {
     return /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement("h3", {
       style: sectionTitle
     }, "Napredak u\u010Denika"), /*#__PURE__*/React.createElement("p", {
@@ -2510,6 +2508,14 @@ function TeacherDashboard({
   const [selectedUsername, setSelectedUsername] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const students = users.filter(u => u.role === "student");
+  function handleDeleteStudent(username) {
+    onDeleteUser(username);
+    if (selectedUsername === username) setSelectedUsername(null);
+  }
+  function handleDeleteAll() {
+    onDeleteAllStudents();
+    setSelectedUsername(null);
+  }
   async function handleRefreshClick() {
     setRefreshing(true);
     await onRefresh();
@@ -2655,8 +2661,8 @@ function TeacherDashboard({
       setSelectedUsername(u);
       setTab("napredak");
     },
-    onDelete: onDeleteUser,
-    onDeleteAll: onDeleteAllStudents,
+    onDelete: handleDeleteStudent,
+    onDeleteAll: handleDeleteAll,
     onDownload: downloadAll
   })), tab === "napredak" && /*#__PURE__*/React.createElement(ProgressPanel, {
     students: students,
@@ -3615,11 +3621,13 @@ function AppInner() {
   useEffect(() => {
     (async () => {
       let u = await loadUsers();
+      // Only bootstrap the demo accounts the very first time the sheet is
+      // genuinely empty. After that we trust whatever the teacher has —
+      // including an intentionally empty class list — and never silently
+      // re-add the demo student.
       if (!u || u.length === 0) {
         u = seedUsers();
         await saveUsers(u);
-      } else {
-        u = ensureDefaults(u);
       }
       let a = await loadAttempts();
       if (!a) a = [];
@@ -3641,12 +3649,12 @@ function AppInner() {
     })();
   }, []);
 
-  // Keep the teacher's view reasonably fresh while it's open, since students
-  // may be adding attempts from other devices at the same time.
+  // Refreshes the teacher's view with whatever is currently on the sheet —
+  // nothing more. It must never re-add accounts the teacher deleted.
   async function refreshData() {
     try {
       const [u, a] = await Promise.all([loadUsers(), loadAttempts()]);
-      if (u) setUsers(ensureDefaults(u));
+      if (u) setUsers(u);
       if (a) setAttempts(a);
       setSyncError(false);
     } catch (e) {
