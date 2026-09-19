@@ -794,6 +794,20 @@ async function loadAttempts() {
     return null;
   }
 }
+// Bulk overwrite — used when deleting a student (or all students) so their
+// results disappear from the shared sheet too.
+async function saveAttempts(list) {
+  try {
+    await apiPost({
+      action: "saveAttempts",
+      attempts: list
+    });
+  } catch (e) {
+    console.error("Greška pri spremanju pokušaja", e);
+  }
+}
+// Single append — used after a student finishes a game, so we don't have to
+// re-upload the whole attempts table on every play.
 async function addAttemptRemote(attempt) {
   try {
     await apiPost({
@@ -1570,6 +1584,7 @@ function StudentListPanel({
   attempts,
   onSelect,
   onDelete,
+  onDeleteAll,
   onDownload
 }) {
   return /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement("div", {
@@ -1577,19 +1592,34 @@ function StudentListPanel({
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 14
+      marginBottom: 14,
+      flexWrap: "wrap",
+      gap: 10
     }
   }, /*#__PURE__*/React.createElement("h3", {
     style: {
       ...sectionTitle,
       margin: 0
     }
-  }, "Popis u\u010Denika (", students.length, ")"), /*#__PURE__*/React.createElement(Button, {
+  }, "Popis u\u010Denika (", students.length, ")"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
     variant: "ghost",
     onClick: onDownload
   }, /*#__PURE__*/React.createElement(Download, {
     size: 16
-  }), " Preuzmi sve podatke")), students.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }), " Preuzmi sve podatke"), students.length > 0 && /*#__PURE__*/React.createElement(Button, {
+    variant: "ghost",
+    onClick: onDeleteAll,
+    style: {
+      color: CORAL
+    }
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    size: 16
+  }), " Obri\u0161i sve u\u010Denike"))), students.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       color: "#9CA3AF",
       padding: "20px 0"
@@ -2467,6 +2497,7 @@ function TeacherDashboard({
   bank,
   onAddUsers,
   onDeleteUser,
+  onDeleteAllStudents,
   onAddQuestion,
   onUpdateQuestion,
   onDeleteQuestion,
@@ -2625,6 +2656,7 @@ function TeacherDashboard({
       setTab("napredak");
     },
     onDelete: onDeleteUser,
+    onDeleteAll: onDeleteAllStudents,
     onDownload: downloadAll
   })), tab === "napredak" && /*#__PURE__*/React.createElement(ProgressPanel, {
     students: students,
@@ -2991,12 +3023,10 @@ function QuestionCard({
       }
     }, [{
       val: true,
-      label: `${q.element} ∈ ${q.letter}`,
-      sub: "pripada"
+      label: `${q.element} ∈ ${q.letter}`
     }, {
       val: false,
-      label: `${q.element} ∉ ${q.letter}`,
-      sub: "ne pripada"
+      label: `${q.element} ∉ ${q.letter}`
     }].map(opt => {
       let bg = "#fff",
         border = "2px solid rgba(30,39,73,0.12)",
@@ -3026,15 +3056,15 @@ function QuestionCard({
           color,
           minWidth: 150
         }
-      }, opt.label, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 12,
-          fontWeight: 600,
-          color: "#9CA3AF",
-          marginTop: 4
-        }
-      }, opt.sub));
-    })));
+      }, opt.label);
+    })), submitted && selected !== q.correct && /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        marginTop: 14,
+        color: "#6B7280",
+        fontSize: 13
+      }
+    }, q.correct ? `Točno je ${q.element} ∈ ${q.letter}, jer se ${q.element} nalazi među elementima skupa ${q.letter}.` : `Točno je ${q.element} ∉ ${q.letter}, jer se ${q.element} ne nalazi među elementima skupa ${q.letter}.`));
   }
   if (q.type === "count") {
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -3264,7 +3294,7 @@ function QuestionCard({
           minWidth: 150
         }
       }, opt.label);
-    })), submitted && /*#__PURE__*/React.createElement("div", {
+    })), submitted && selected !== q.correct && /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: "center",
         marginTop: 14,
@@ -3644,10 +3674,25 @@ function AppInner() {
     await saveUsers(updated);
   }
   async function handleDeleteUser(username) {
-    if (!window.confirm("Ukloniti ovog učenika iz popisa? Njegovi pokušaji ostat će zabilježeni.")) return;
-    const updated = users.filter(u => u.username !== username);
-    setUsers(updated);
-    await saveUsers(updated);
+    if (!window.confirm("Ukloniti ovog učenika i sve njegove zabilježene rezultate?")) return;
+    const updatedUsers = users.filter(u => u.username !== username);
+    const updatedAttempts = attempts.filter(a => a.username !== username);
+    setUsers(updatedUsers);
+    setAttempts(updatedAttempts);
+    await saveUsers(updatedUsers);
+    await saveAttempts(updatedAttempts);
+  }
+  async function handleDeleteAllStudents() {
+    const studentCount = users.filter(u => u.role === "student").length;
+    if (studentCount === 0) return;
+    if (!window.confirm(`Ukloniti svih ${studentCount} učenika s popisa i sve njihove zabilježene rezultate? Ova radnja se ne može poništiti.`)) return;
+    const updatedUsers = users.filter(u => u.role !== "student");
+    const remainingUsernames = new Set(updatedUsers.map(u => u.username));
+    const updatedAttempts = attempts.filter(a => remainingUsernames.has(a.username));
+    setUsers(updatedUsers);
+    setAttempts(updatedAttempts);
+    await saveUsers(updatedUsers);
+    await saveAttempts(updatedAttempts);
   }
   async function handleAddQuestion(gameId, question) {
     const updated = {
@@ -3753,6 +3798,7 @@ function AppInner() {
       bank: bank,
       onAddUsers: handleAddUsers,
       onDeleteUser: handleDeleteUser,
+      onDeleteAllStudents: handleDeleteAllStudents,
       onAddQuestion: handleAddQuestion,
       onUpdateQuestion: handleUpdateQuestion,
       onDeleteQuestion: handleDeleteQuestion,
